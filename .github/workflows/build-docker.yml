@@ -1,0 +1,32 @@
+name: Docker build image
+
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+  workflow_dispatch:
+
+jobs:
+  Docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get image name
+        id: img_name
+        shell: pwsh
+        run: |
+          $ImageName = "${{github.repository}}".ToLower()  
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "name=$ImageName"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ${{ steps.img_name.outputs.name }}:latest
