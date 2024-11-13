@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package user;
+
+service User {
+    rpc Authenticate (AuthUser) returns (AuthResponse);
+    rpc Register (RegUser) returns (RegResponse); 
+}
+
+message RegUser {
+    string username = 1;
+    string email = 2;
+    string password = 3;
+
+    string name = 4;
+    string surname = 5;
+    string street = 6;
+    string building = 7;
+    string city = 8;
+    string postal_code = 9;
+    string country = 10;
+}
+
+message AuthUser {
+    string email = 1;
+    string password = 2;
+}
+
+message AuthResponse {
+    bool success = 1;
+}
+
+message RegResponse {
+    bool success = 1;
+}
