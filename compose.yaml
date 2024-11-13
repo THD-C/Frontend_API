@@ -1,0 +1,9 @@
+services:
+  Backend:
+    build:
+      dockerfile: Dockerfile
+    image: thd/frontend_api
+    container_name: THD_Frontend_API
+    restart: unless-stopped
+    ports:
+      - 8000:8000

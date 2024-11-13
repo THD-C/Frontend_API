@@ -1,0 +1,7 @@
+Deprecated==1.2.14
+fastapi==0.115.3
+grpcio-tools
+pyjwt
+protobuf
+uvicorn==0.32.0
+

@@ -1,0 +1,3 @@
+[submodule "proto/Protocol"]
+	path = proto/Protocol
+	url = https://github.com/THD-C/Protocol.git
