@@ -7,3 +7,39 @@ services:
     restart: unless-stopped
     ports:
       - 8000:8000
+    depends_on:
+      DBManager:
+        condition: service_started
+
+  Postgres:
+    build: https://github.com/THD-C/Postgres.git
+    image: thd/postgres
+    container_name: THD_Postgres
+    hostname: Postgres
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - PG-Data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U default -d thdc" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  DBManager:
+    build: https://github.com/THD-C/DB_Manager.git
+    image: thd/dbmanager
+    container_name: THD_DB_Manager
+    restart: unless-stopped
+    ports:
+      - 50051:50051
+    environment:
+      - POSTGRES_URL=postgresql://default:PL_tech_hand_elk@Postgres:5432/thdc
+    depends_on:
+        Postgres:
+          condition: service_healthy
+
+volumes:
+    PG-Data:
