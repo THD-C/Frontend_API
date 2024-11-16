@@ -32,14 +32,15 @@ services:
     build: https://github.com/THD-C/DB_Manager.git
     image: thd/dbmanager
     container_name: THD_DB_Manager
+    hostname: THD_DB_Manager
     restart: unless-stopped
     ports:
       - 50051:50051
     environment:
       - POSTGRES_URL=postgresql://default:PL_tech_hand_elk@Postgres:5432/thdc
     depends_on:
-        Postgres:
-          condition: service_healthy
+      Postgres:
+        condition: service_healthy
 
 volumes:
-    PG-Data:
+  PG-Data:
