@@ -1,5 +1,3 @@
-import json
-
 from fastapi import APIRouter, HTTPException
 from grpc import RpcError
 from pydantic import BaseModel
@@ -39,7 +37,7 @@ class TokenRequest(BaseModel):
     OAuth_token: str
 
 
-@router.post("/login", responses={500: {"description": "gRPC Error"}})
+@router.post("/login")
 def login(credentials: Credentials):
     credentials = user_pb2.AuthUser(**credentials.dict())
 
