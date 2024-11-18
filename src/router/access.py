@@ -30,14 +30,45 @@ class RegisterData(BaseModel):
     country: str | None = None
 
 
-router = APIRouter()
+access = APIRouter(tags=['Auth'])
 
 
 class TokenRequest(BaseModel):
     OAuth_token: str
 
 
-@router.post("/login")
+@access.post("/login", responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Invalid credentials passed",
+        "content": {
+            "application/json": {
+                "example": {"detail": "invalid_credentials"}
+            }
+        }
+    },
+    200: {
+        "description": "Details about the user who got authorized",
+        "content": {
+            "application/json": {
+                "example": {
+                    "accessToken": "str",
+                    "authScheme": "str",
+                    "email": "xyz@gmail.com",
+                    "username": "xyz",
+                    "id": "1"
+                }
+            }
+        }
+    }
+}, description="Authorize the user who has the account already created.")
 def login(credentials: Credentials):
     credentials = user_pb2.AuthUser(**credentials.dict())
 
@@ -64,7 +95,38 @@ def login(credentials: Credentials):
     raise HTTPException(status_code=400, detail="invalid_credentials")
 
 
-@router.post("/register")
+@access.post("/register", responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Passed data have another user assigned to it",
+        "content": {
+            "application/json": {
+                "example": {"detail": "email_or_username_occupied"}
+            }
+        }
+    },
+    200: {
+        "description": "Details about the user whose account is registered and authorized",
+        "content": {
+            "application/json": {
+                "example": {
+                    "accessToken": "str",
+                    "authScheme": "str",
+                    "email": "xyz@gmail.com",
+                    "username": "xyz",
+                    "id": "1"
+                }
+            }
+        }
+    }
+}, description="Create and authorize new account.")
 def register_user(registerData: RegisterData):
     data_for_grpc = user_pb2.RegUser(**registerData.dict())
 
@@ -77,15 +139,14 @@ def register_user(registerData: RegisterData):
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success is False:
-        raise HTTPException(status_code=400, detail="email_or_username_occupied" )
+        raise HTTPException(status_code=400, detail="email_or_username_occupied")
 
-
-    login_data = Credentials(email = registerData.email, password = registerData.password)
+    login_data = Credentials(email=registerData.email, password=registerData.password)
     login_response = login(login_data)
     return login_response
 
 
-@router.post("/auth-google")
+@access.post("/auth-google")
 async def auth_google(token: TokenRequest):
     GOOGLE_ID = GOOGLE_CLIENT_ID
 
@@ -95,8 +156,7 @@ async def auth_google(token: TokenRequest):
         email = token_id_info.get("email")
         hashed_password = bcrypt.hashpw(token_id_info.encode("uft-8"), bcrypt.gensalt()).decode('utf-8')
 
-
-        register_data = RegisterData(username = user_id, email = email, password = hashed_password)
+        register_data = RegisterData(username=user_id, email=email, password=hashed_password)
 
         await register_user(register_data)
 
