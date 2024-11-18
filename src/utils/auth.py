@@ -5,12 +5,12 @@ from src.utils import JWT_SECRET_KEY
 
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 def create_jwt_token(data: dict):
-    data['iat'] = datetime.now(UTC).isoformat()
-    data['exp'] = (datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).isoformat()
+    data['iat'] = datetime.now(UTC)
+    data['exp'] = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     return jwt.encode(data, JWT_SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -18,8 +18,8 @@ def verify_jwt_token(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except jwt.ExpiredSignatureError | jwt.InvalidTokenError:
-        return None
+    except jwt.ExpiredSignatureError | jwt.InvalidTokenError as e:
+        raise e
 
 def refresh_jwt_token(token: str):
     payload = verify_jwt_token(token)
