@@ -1,4 +1,3 @@
-from user import user_detail_pb2 as _user_detail_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -23,3 +22,15 @@ class WalletList(_message.Message):
     WALLETS_FIELD_NUMBER: _ClassVar[int]
     wallets: _containers.RepeatedCompositeFieldContainer[Wallet]
     def __init__(self, wallets: _Optional[_Iterable[_Union[Wallet, _Mapping]]] = ...) -> None: ...
+
+class UserID(_message.Message):
+    __slots__ = ("id",)
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: str
+    def __init__(self, id: _Optional[str] = ...) -> None: ...
+
+class WalletID(_message.Message):
+    __slots__ = ("id",)
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: str
+    def __init__(self, id: _Optional[str] = ...) -> None: ...
