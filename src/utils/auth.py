@@ -1,6 +1,8 @@
 import jwt
 from datetime import datetime, timedelta, UTC
 
+from fastapi import HTTPException
+
 from src.utils import JWT_SECRET_KEY
 
 
@@ -18,7 +20,7 @@ def verify_jwt_token(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except jwt.ExpiredSignatureError | jwt.InvalidTokenError as e:
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
         raise e
 
 def refresh_jwt_token(token: str):
@@ -29,4 +31,24 @@ def refresh_jwt_token(token: str):
         return payload
     return None
 
+def verify_user(authorization_header: str):
+    if authorization_header is None:
+        raise HTTPException(status_code=401, detail="no_authorization_header")
+    try:
+        if authorization_header.startswith("Bearer "):
+            token = authorization_header.split(" ")[1]
+            payload = verify_jwt_token(token)
+        else:
+            raise HTTPException(status_code=401, detail = "invalid_auth_scheme")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="expired_token"
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail="invalid_token"
+        )
+    return payload
 
