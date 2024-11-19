@@ -29,12 +29,12 @@ class RegUser(_message.Message):
     def __init__(self, username: _Optional[str] = ..., email: _Optional[str] = ..., password: _Optional[str] = ..., name: _Optional[str] = ..., surname: _Optional[str] = ..., street: _Optional[str] = ..., building: _Optional[str] = ..., city: _Optional[str] = ..., postal_code: _Optional[str] = ..., country: _Optional[str] = ...) -> None: ...
 
 class AuthUser(_message.Message):
-    __slots__ = ("email", "password")
-    EMAIL_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("login", "password")
+    LOGIN_FIELD_NUMBER: _ClassVar[int]
     PASSWORD_FIELD_NUMBER: _ClassVar[int]
-    email: str
+    login: str
     password: str
-    def __init__(self, email: _Optional[str] = ..., password: _Optional[str] = ...) -> None: ...
+    def __init__(self, login: _Optional[str] = ..., password: _Optional[str] = ...) -> None: ...
 
 class AuthResponse(_message.Message):
     __slots__ = ("success", "id", "email", "username")

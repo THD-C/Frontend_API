@@ -13,7 +13,7 @@ from user import user_pb2, user_pb2_grpc
 
 
 class Credentials(BaseModel):
-    email: str
+    login: str
     password: str
 
 
@@ -141,7 +141,7 @@ def register_user(registerData: RegisterData):
     if response.success is False:
         raise HTTPException(status_code=400, detail="email_or_username_occupied")
 
-    login_data = Credentials(email=registerData.email, password=registerData.password)
+    login_data = Credentials(login=registerData.email, password=registerData.password)
     login_response = login(login_data)
     return login_response
 

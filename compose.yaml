@@ -38,6 +38,7 @@ services:
       - 50051:50051
     environment:
       - POSTGRES_URL=postgresql://default:PL_tech_hand_elk@Postgres:5432/thdc
+      - DROP_EXISTING_DB=True
     depends_on:
       Postgres:
         condition: service_healthy
