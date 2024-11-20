@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from src.router import access, wallets
+from src.router import access, wallets, user
 
 
 app = FastAPI()
@@ -22,6 +22,7 @@ app.add_middleware(
 
 app.include_router(access.access, prefix="/api/auth")
 app.include_router(wallets.wallets, prefix="/api/wallets")
+app.include_router(user.user, prefix="/api/user")
 
 
 if __name__ == "__main__":
