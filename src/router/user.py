@@ -124,7 +124,6 @@ def get_user_details(user_id, request: Request):
             "application/json": {
                 "example": {
                     "id": "string",
-                    "email": "string",
                     "password": "string",
                     "name": "string",
                     "surname": "string",
@@ -156,7 +155,10 @@ def update_user_details(update_data: UpdateUserData, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        return update_data
+        after_update_data =  MessageToDict(user_message)
+        after_update_data.pop("password")
+        return after_update_data
+
 
 
 @user.delete("/", responses={
