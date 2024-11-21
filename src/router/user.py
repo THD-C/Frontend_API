@@ -23,6 +23,12 @@ class UpdateUserData(BaseModel):
     country: str
 
 
+class DeleteUser(BaseModel):
+    id: str
+    password: str
+    mail: str | None = ""
+
+
 @user.get("/", responses={
     500: {
         "description": "Problems occurred inside the server",
@@ -54,10 +60,15 @@ class UpdateUserData(BaseModel):
         "content": {
             "application/json": {
                 "example": {
-                    "id": "1",
-                    "currency": "PLN",
-                    "value": "250.32",
-                    "user_id": "2"
+                    "username": "sed ullamco",
+                    "email": "new@mail.com",
+                    "name": "some",
+                    "surname": "adipisicing in in ex",
+                    "street": "dolore",
+                    "building": "sit amet dolor",
+                    "city": "tempor quis aliquip",
+                    "postalCode": "cillum cupidatat mollit laborum",
+                    "country": "non mollit irure"
                 }
             }
         }
@@ -154,10 +165,9 @@ def update_user_details(update_data: UpdateUserData, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        after_update_data =  MessageToDict(user_message)
+        after_update_data = MessageToDict(user_message)
         after_update_data.pop("password")
         return after_update_data
-
 
 
 @user.delete("/", responses={
@@ -197,17 +207,19 @@ def update_user_details(update_data: UpdateUserData, request: Request):
             }
         }
     }
-}, description="Deletes user with specified id")
-def delete_user(user_id, request:Request):
+}, description="Deletes user")
+def delete_user(userDelete: DeleteUser, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != user_id:
+    if str(jwt_payload.get("id")) != userDelete.id:
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_message = user_pb2.ReqDeleteUser(id=user_id)
+    userDelete.mail = jwt_payload.get("email")
+
+    user_message = user_pb2.ReqDeleteUser(**userDelete.dict())
     try:
         stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.Update(user_message)
+        response: user_pb2.ResultResponse = stub.Delete(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
