@@ -124,7 +124,6 @@ def get_user_details(user_id, request: Request):
             "application/json": {
                 "example": {
                     "id": "string",
-                    "password": "string",
                     "name": "string",
                     "surname": "string",
                     "street": "string",
@@ -188,7 +187,7 @@ def update_user_details(update_data: UpdateUserData, request: Request):
         "description": "No user with given id"
     },
     200: {
-        "description": "Details of specified user after update",
+        "description": "Details and success about the deleting user's profile",
         "content": {
             "application/json": {
                 "example": {
