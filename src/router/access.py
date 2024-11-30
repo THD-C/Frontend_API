@@ -62,8 +62,7 @@ class TokenRequest(BaseModel):
                     "accessToken": "str",
                     "authScheme": "str",
                     "email": "xyz@gmail.com",
-                    "username": "xyz",
-                    "id": "1"
+                    "username": "xyz"
                 }
             }
         }
@@ -87,8 +86,7 @@ def login(credentials: Credentials):
         endpoint_response = {"accessToken": jwt_token,
                              "authScheme": 'Bearer',
                              "email": response.email,
-                             "username": response.username,
-                             "id": response.id}
+                             "username": response.username}
 
         return endpoint_response
 
@@ -120,8 +118,7 @@ def login(credentials: Credentials):
                     "accessToken": "str",
                     "authScheme": "str",
                     "email": "xyz@gmail.com",
-                    "username": "xyz",
-                    "id": "1"
+                    "username": "xyz"
                 }
             }
         }
