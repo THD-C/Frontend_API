@@ -11,7 +11,6 @@ user = APIRouter(tags=['User'])
 
 
 class UpdateUserData(BaseModel):
-    id: str
     email: str
     password: str
     name: str
@@ -24,7 +23,6 @@ class UpdateUserData(BaseModel):
 
 
 class DeleteUser(BaseModel):
-    id: str
     password: str
     mail: str | None = ""
 
@@ -73,14 +71,12 @@ class DeleteUser(BaseModel):
             }
         }
     }
-}, description="Returns user details of specified id")
-def get_user_details(user_id, request: Request):
+}, description="Returns user details")
+def get_user_details( request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != user_id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_message = user_pb2.ReqGetUserDetails(id=user_id)
+    user_message = user_pb2.ReqGetUserDetails(id=jwt_payload.get("id"), )
     try:
         stub = user_pb2_grpc.UserStub(channel)
         response: user_pb2.UserDetails = stub.GetUserDetails(user_message)
@@ -92,7 +88,7 @@ def get_user_details(user_id, request: Request):
     if response.username == "":
         raise HTTPException(status_code=204)
     else:
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @user.put("/", responses={
@@ -150,10 +146,9 @@ def get_user_details(user_id, request: Request):
 def update_user_details(update_data: UpdateUserData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != update_data.id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_message = user_pb2.ReqUpdateUser(**update_data.dict())
+
+    user_message = user_pb2.ReqUpdateUser(**update_data.dict(), id=jwt_payload.get("id"))
     try:
         stub = user_pb2_grpc.UserStub(channel)
         response: user_pb2.ResultResponse = stub.Update(user_message)
@@ -165,7 +160,7 @@ def update_user_details(update_data: UpdateUserData, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        after_update_data = MessageToDict(user_message)
+        after_update_data = MessageToDict(user_message, preserving_proto_field_name=True)
         after_update_data.pop("password")
         return after_update_data
 
@@ -211,12 +206,11 @@ def update_user_details(update_data: UpdateUserData, request: Request):
 def delete_user(userDelete: DeleteUser, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != userDelete.id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    userDelete.mail = jwt_payload.get("email")
+    if userDelete.mail == "":
+        userDelete.mail = jwt_payload.get("email")
 
-    user_message = user_pb2.ReqDeleteUser(**userDelete.dict())
+    user_message = user_pb2.ReqDeleteUser(**userDelete.dict(), id=jwt_payload.get("id"))
     try:
         stub = user_pb2_grpc.UserStub(channel)
         response: user_pb2.ResultResponse = stub.Delete(user_message)
@@ -228,4 +222,4 @@ def delete_user(userDelete: DeleteUser, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
