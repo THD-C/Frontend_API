@@ -21,13 +21,13 @@ class RegisterData(BaseModel):
     username: str
     password: str
     email: str
-    name: str | None = None
-    surname: str | None = None
-    street: str | None = None
-    building: str | None = None
-    city: str | None = None
-    postal_code: str | None = None
-    country: str | None = None
+    name: str | None = ""
+    surname: str | None = ""
+    street: str | None = ""
+    building: str | None = ""
+    city: str | None = ""
+    postal_code: str | None = ""
+    country: str | None = ""
 
 
 access = APIRouter(tags=['Auth'])
