@@ -5,7 +5,7 @@ import warnings
 
 from wallet import wallet_pb2 as wallet_dot_wallet__pb2
 
-GRPC_GENERATED_VERSION = '1.67.1'
+GRPC_GENERATED_VERSION = '1.68.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -34,28 +34,28 @@ class WalletsStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.createWallet = channel.unary_unary(
-                '/wallet.Wallets/createWallet',
+        self.CreateWallet = channel.unary_unary(
+                '/wallet.Wallets/CreateWallet',
                 request_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
                 response_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                 _registered_method=True)
-        self.updateWallet = channel.unary_unary(
-                '/wallet.Wallets/updateWallet',
+        self.UpdateWallet = channel.unary_unary(
+                '/wallet.Wallets/UpdateWallet',
                 request_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
                 response_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                 _registered_method=True)
-        self.deleteWallet = channel.unary_unary(
-                '/wallet.Wallets/deleteWallet',
+        self.DeleteWallet = channel.unary_unary(
+                '/wallet.Wallets/DeleteWallet',
                 request_serializer=wallet_dot_wallet__pb2.WalletID.SerializeToString,
                 response_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                 _registered_method=True)
-        self.getWallet = channel.unary_unary(
-                '/wallet.Wallets/getWallet',
+        self.GetWallet = channel.unary_unary(
+                '/wallet.Wallets/GetWallet',
                 request_serializer=wallet_dot_wallet__pb2.WalletID.SerializeToString,
                 response_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                 _registered_method=True)
-        self.getUsersWallets = channel.unary_unary(
-                '/wallet.Wallets/getUsersWallets',
+        self.GetUsersWallets = channel.unary_unary(
+                '/wallet.Wallets/GetUsersWallets',
                 request_serializer=wallet_dot_wallet__pb2.UserID.SerializeToString,
                 response_deserializer=wallet_dot_wallet__pb2.WalletList.FromString,
                 _registered_method=True)
@@ -64,31 +64,31 @@ class WalletsStub(object):
 class WalletsServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def createWallet(self, request, context):
+    def CreateWallet(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def updateWallet(self, request, context):
+    def UpdateWallet(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def deleteWallet(self, request, context):
+    def DeleteWallet(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def getWallet(self, request, context):
+    def GetWallet(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def getUsersWallets(self, request, context):
+    def GetUsersWallets(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -97,28 +97,28 @@ class WalletsServicer(object):
 
 def add_WalletsServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'createWallet': grpc.unary_unary_rpc_method_handler(
-                    servicer.createWallet,
+            'CreateWallet': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateWallet,
                     request_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                     response_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
             ),
-            'updateWallet': grpc.unary_unary_rpc_method_handler(
-                    servicer.updateWallet,
+            'UpdateWallet': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateWallet,
                     request_deserializer=wallet_dot_wallet__pb2.Wallet.FromString,
                     response_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
             ),
-            'deleteWallet': grpc.unary_unary_rpc_method_handler(
-                    servicer.deleteWallet,
+            'DeleteWallet': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteWallet,
                     request_deserializer=wallet_dot_wallet__pb2.WalletID.FromString,
                     response_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
             ),
-            'getWallet': grpc.unary_unary_rpc_method_handler(
-                    servicer.getWallet,
+            'GetWallet': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetWallet,
                     request_deserializer=wallet_dot_wallet__pb2.WalletID.FromString,
                     response_serializer=wallet_dot_wallet__pb2.Wallet.SerializeToString,
             ),
-            'getUsersWallets': grpc.unary_unary_rpc_method_handler(
-                    servicer.getUsersWallets,
+            'GetUsersWallets': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUsersWallets,
                     request_deserializer=wallet_dot_wallet__pb2.UserID.FromString,
                     response_serializer=wallet_dot_wallet__pb2.WalletList.SerializeToString,
             ),
@@ -134,7 +134,7 @@ class Wallets(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def createWallet(request,
+    def CreateWallet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -147,7 +147,7 @@ class Wallets(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/wallet.Wallets/createWallet',
+            '/wallet.Wallets/CreateWallet',
             wallet_dot_wallet__pb2.Wallet.SerializeToString,
             wallet_dot_wallet__pb2.Wallet.FromString,
             options,
@@ -161,7 +161,7 @@ class Wallets(object):
             _registered_method=True)
 
     @staticmethod
-    def updateWallet(request,
+    def UpdateWallet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -174,7 +174,7 @@ class Wallets(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/wallet.Wallets/updateWallet',
+            '/wallet.Wallets/UpdateWallet',
             wallet_dot_wallet__pb2.Wallet.SerializeToString,
             wallet_dot_wallet__pb2.Wallet.FromString,
             options,
@@ -188,7 +188,7 @@ class Wallets(object):
             _registered_method=True)
 
     @staticmethod
-    def deleteWallet(request,
+    def DeleteWallet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -201,7 +201,7 @@ class Wallets(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/wallet.Wallets/deleteWallet',
+            '/wallet.Wallets/DeleteWallet',
             wallet_dot_wallet__pb2.WalletID.SerializeToString,
             wallet_dot_wallet__pb2.Wallet.FromString,
             options,
@@ -215,7 +215,7 @@ class Wallets(object):
             _registered_method=True)
 
     @staticmethod
-    def getWallet(request,
+    def GetWallet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -228,7 +228,7 @@ class Wallets(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/wallet.Wallets/getWallet',
+            '/wallet.Wallets/GetWallet',
             wallet_dot_wallet__pb2.WalletID.SerializeToString,
             wallet_dot_wallet__pb2.Wallet.FromString,
             options,
@@ -242,7 +242,7 @@ class Wallets(object):
             _registered_method=True)
 
     @staticmethod
-    def getUsersWallets(request,
+    def GetUsersWallets(request,
             target,
             options=(),
             channel_credentials=None,
@@ -255,7 +255,7 @@ class Wallets(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/wallet.Wallets/getUsersWallets',
+            '/wallet.Wallets/GetUsersWallets',
             wallet_dot_wallet__pb2.UserID.SerializeToString,
             wallet_dot_wallet__pb2.WalletList.FromString,
             options,

@@ -13,14 +13,12 @@ class WalletCreationData(BaseModel):
     id: str | None = ""
     currency: str
     value: str | None = "0"
-    user_id: str
 
 
 class WalletUpdateData(BaseModel):
     id: str
     currency: str | None = ""
     value: str
-    user_id: str | None = ""
 
 
 class WalletsOwnerData(BaseModel):
@@ -78,21 +76,19 @@ wallets = APIRouter(tags=["Wallets"])
 def create_wallet(wallet_data: WalletCreationData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != wallet_data.user_id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    wallet_message = wallet_pb2.Wallet(**wallet_data.dict())
+    wallet_message = wallet_pb2.Wallet(**wallet_data.dict(), user_id=jwt_payload.get("id"))
 
     try:
         stub = wallet_pb2_grpc.WalletsStub(channel)
-        response = stub.createWallet(wallet_message)
+        response = stub.CreateWallet(wallet_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -149,14 +145,14 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
 
     try:
         stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.updateWallet(data_for_update)
+        response: wallet_pb2.Wallet = stub.UpdateWallet(data_for_update)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -218,18 +214,16 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
             }
         }
     }
-}, description="Returns a list of all wallets for user which id is given as parameter.")
-def get_wallets(user_id, request: Request):
+}, description="Returns a list of all wallets for user")
+def get_wallets(request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != user_id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_data = user_detail_pb2.UserDetail(id=user_id)
+    user_data = user_detail_pb2.UserDetail(id=jwt_payload.get("id"))
 
     try:
         stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.WalletList = stub.getUsersWallets(user_data)
+        response: wallet_pb2.WalletList = stub.GetUsersWallets(user_data)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -238,7 +232,7 @@ def get_wallets(user_id, request: Request):
     if len(response.wallets) == 0:
         raise HTTPException(status_code=204)
     else:
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @wallets.get("/wallet", responses={
@@ -297,7 +291,7 @@ def get_wallet_by_id(wallet_id, request: Request):
 
     try:
         stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.getWallet(wallet_data)
+        response: wallet_pb2.Wallet = stub.GetWallet(wallet_data)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -309,7 +303,7 @@ def get_wallet_by_id(wallet_id, request: Request):
     if str(jwt_payload.get("id")) != response.user_id:
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    return MessageToDict(response)
+    return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @wallets.delete("/", responses={
@@ -369,7 +363,7 @@ def delete_wallet(wallet_id, request: Request):
     try:
         wallet_id_message = wallet_pb2.Wallet(id=wallet_data.get("id"))
         stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.deleteWallet(wallet_id_message)
+        response: wallet_pb2.Wallet = stub.DeleteWallet(wallet_id_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -378,4 +372,4 @@ def delete_wallet(wallet_id, request: Request):
     if response.id == "":
         raise HTTPException(status_code=204)
 
-    return MessageToDict(response)
+    return MessageToDict(response, preserving_proto_field_name=True)
