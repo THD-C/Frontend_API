@@ -151,7 +151,7 @@ async def auth_google(token: TokenRequest):
         token_id_info = id_token.verify_token(token.OAuth_token, requests.Request(), GOOGLE_ID)
         user_id = token_id_info.get("sub")
         email = token_id_info.get("email")
-        hashed_password = bcrypt.hashpw(token_id_info.encode("uft-8"), bcrypt.gensalt()).decode('utf-8')
+        hashed_password = bcrypt.hashpw(token_id_info.encode("utf-8"), bcrypt.gensalt()).decode('utf-8')
 
         register_data = RegisterData(username=user_id, email=email, password=hashed_password)
 
