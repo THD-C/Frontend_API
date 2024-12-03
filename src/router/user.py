@@ -3,17 +3,14 @@ from google.protobuf.json_format import MessageToDict
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import channel
+from src.connections import user_stub
 from src.utils.auth import verify_user
-from user import user_pb2, user_pb2_grpc
-
+from user import user_pb2
 user = APIRouter(tags=['User'])
 
 
 class UpdateUserData(BaseModel):
-    id: str
     email: str
-    password: str
     name: str
     surname: str
     street: str
@@ -24,9 +21,13 @@ class UpdateUserData(BaseModel):
 
 
 class DeleteUser(BaseModel):
-    id: str
     password: str
     mail: str | None = ""
+
+
+class UpdatePassword(BaseModel):
+    old_password: str
+    new_password: str
 
 
 @user.get("/", responses={
@@ -73,17 +74,14 @@ class DeleteUser(BaseModel):
             }
         }
     }
-}, description="Returns user details of specified id")
-def get_user_details(user_id, request: Request):
+}, description="Returns user details")
+def get_user_details(request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != user_id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_message = user_pb2.ReqGetUserDetails(id=user_id)
+    user_message = user_pb2.ReqGetUserDetails(id=jwt_payload.get("id"), )
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.UserDetails = stub.GetUserDetails(user_message)
+        response: user_pb2.UserDetails = user_stub.GetUserDetails(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -92,7 +90,7 @@ def get_user_details(user_id, request: Request):
     if response.username == "":
         raise HTTPException(status_code=204)
     else:
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @user.put("/", responses={
@@ -150,13 +148,11 @@ def get_user_details(user_id, request: Request):
 def update_user_details(update_data: UpdateUserData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != update_data.id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    user_message = user_pb2.ReqUpdateUser(**update_data.dict())
+    user_message = user_pb2.ReqUpdateUser(**update_data.dict(), id=jwt_payload.get("id"))
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.Update(user_message)
+
+        response: user_pb2.ResultResponse = user_stub.Update(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -165,9 +161,68 @@ def update_user_details(update_data: UpdateUserData, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        after_update_data = MessageToDict(user_message)
-        after_update_data.pop("password")
-        return after_update_data
+        return MessageToDict(user_message, preserving_proto_field_name=True)
+
+
+@user.put("/update-password",responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Update of details failed",
+        "content": {
+            "application/json": {
+                "example": {"detail": "invalid_old_password"}
+            }
+        }
+    },
+    401: {
+        "description": "Authorization failure",
+        "content": {
+            "application/json": {
+                "example": [{"detail": "no_authorization_header"},
+                            {"detail": "invalid_auth_scheme"},
+                            {"detail": "invalid_token"},
+                            {"detail": "expired_token"},
+                            {"detail": "unauthorized_user_for_method"}
+                            ]
+
+            }
+        }
+    },
+    200: {
+        "description": "Success of operation",
+        "content": {
+            "application/json": {
+                "example": {
+                    "success": "true",
+                }
+            }
+        }
+    }
+}, description="Updates password")
+def update_password(updatePassword: UpdatePassword, request: Request):
+    auth_header = request.headers.get("Authorization")
+    jwt_payload = verify_user(auth_header)
+
+    password_message: user_pb2.ChangePass = user_pb2.ChangePass(**updatePassword.dict(), login=jwt_payload.get("email"))
+
+    try:
+        response: user_pb2.ResultResponse = user_stub.ChangePassword(password_message)
+    except RpcError as e:
+        print("gRPC error details:", e.details())
+        print("gRPC status code:", e.code())
+        raise HTTPException(status_code=500, detail="internal_server_error")
+
+    if response.success is False:
+        raise HTTPException(status_code=400, detail="invalid_old_password")
+
+    return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @user.delete("/", responses={
@@ -211,15 +266,13 @@ def update_user_details(update_data: UpdateUserData, request: Request):
 def delete_user(userDelete: DeleteUser, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    if str(jwt_payload.get("id")) != userDelete.id:
-        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
-    userDelete.mail = jwt_payload.get("email")
+    if userDelete.mail == "":
+        userDelete.mail = jwt_payload.get("email")
 
-    user_message = user_pb2.ReqDeleteUser(**userDelete.dict())
+    user_message = user_pb2.ReqDeleteUser(**userDelete.dict(), id=jwt_payload.get("id"))
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.Delete(user_message)
+        response: user_pb2.ResultResponse = user_stub.Delete(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -228,4 +281,4 @@ def delete_user(userDelete: DeleteUser, request: Request):
     if response.success is False:
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
