@@ -3,8 +3,16 @@ from datetime import datetime, timedelta, UTC
 
 from fastapi import HTTPException
 
-from src.utils import JWT_SECRET_KEY
+from src.connections import secret_stub
+from secret import secret_pb2
 
+
+
+message = secret_pb2.SecretName(name = "JWT_SECRET_KEY")
+response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
+
+JWT_SECRET_KEY = response_secret.value
+print(JWT_SECRET_KEY)
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60

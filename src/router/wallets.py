@@ -3,9 +3,9 @@ from fastapi import APIRouter, HTTPException, Request
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import channel
+from src.connections import  wallet_stub
 from user import user_detail_pb2
-from wallet import wallet_pb2, wallet_pb2_grpc
+from wallet import wallet_pb2
 from src.utils.auth import verify_user
 
 
@@ -80,8 +80,7 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     wallet_message = wallet_pb2.Wallet(**wallet_data.dict(), user_id=jwt_payload.get("id"))
 
     try:
-        stub = wallet_pb2_grpc.WalletsStub(channel)
-        response = stub.CreateWallet(wallet_message)
+        response = wallet_stub.CreateWallet(wallet_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -144,8 +143,7 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     data_for_update = wallet_pb2.Wallet(**update_wallet_data.dict())
 
     try:
-        stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.UpdateWallet(data_for_update)
+        response: wallet_pb2.Wallet = wallet_stub.UpdateWallet(data_for_update)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -222,8 +220,7 @@ def get_wallets(request: Request):
     user_data = user_detail_pb2.UserDetail(id=jwt_payload.get("id"))
 
     try:
-        stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.WalletList = stub.GetUsersWallets(user_data)
+        response: wallet_pb2.WalletList = wallet_stub.GetUsersWallets(user_data)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -290,8 +287,7 @@ def get_wallet_by_id(wallet_id, request: Request):
     wallet_data = wallet_pb2.Wallet(id=wallet_id)
 
     try:
-        stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.GetWallet(wallet_data)
+        response: wallet_pb2.Wallet = wallet_stub.GetWallet(wallet_data)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -362,8 +358,7 @@ def delete_wallet(wallet_id, request: Request):
 
     try:
         wallet_id_message = wallet_pb2.Wallet(id=wallet_data.get("id"))
-        stub = wallet_pb2_grpc.WalletsStub(channel)
-        response: wallet_pb2.Wallet = stub.DeleteWallet(wallet_id_message)
+        response: wallet_pb2.Wallet = wallet_stub.DeleteWallet(wallet_id_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())

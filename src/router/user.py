@@ -3,10 +3,9 @@ from google.protobuf.json_format import MessageToDict
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import channel
+from src.connections import user_stub
 from src.utils.auth import verify_user
-from user import user_pb2, user_pb2_grpc
-
+from user import user_pb2
 user = APIRouter(tags=['User'])
 
 
@@ -82,8 +81,7 @@ def get_user_details(request: Request):
 
     user_message = user_pb2.ReqGetUserDetails(id=jwt_payload.get("id"), )
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.UserDetails = stub.GetUserDetails(user_message)
+        response: user_pb2.UserDetails = user_stub.GetUserDetails(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -153,8 +151,8 @@ def update_user_details(update_data: UpdateUserData, request: Request):
 
     user_message = user_pb2.ReqUpdateUser(**update_data.dict(), id=jwt_payload.get("id"))
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.Update(user_message)
+
+        response: user_pb2.ResultResponse = user_stub.Update(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -215,8 +213,7 @@ def update_password(updatePassword: UpdatePassword, request: Request):
     password_message: user_pb2.ChangePass = user_pb2.ChangePass(**updatePassword.dict(), login=jwt_payload.get("email"))
 
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.ChangePassword(password_message)
+        response: user_pb2.ResultResponse = user_stub.ChangePassword(password_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
@@ -275,8 +272,7 @@ def delete_user(userDelete: DeleteUser, request: Request):
 
     user_message = user_pb2.ReqDeleteUser(**userDelete.dict(), id=jwt_payload.get("id"))
     try:
-        stub = user_pb2_grpc.UserStub(channel)
-        response: user_pb2.ResultResponse = stub.Delete(user_message)
+        response: user_pb2.ResultResponse = user_stub.Delete(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
