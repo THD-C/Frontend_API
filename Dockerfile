@@ -1,8 +1,5 @@
 FROM python:3.12
 
-ENV DB_MANAGER_PORT 50051
-ENV THD_DB_Manager THD_DB_Manager
-
 COPY ./ /code/app
 
 WORKDIR /code/app
