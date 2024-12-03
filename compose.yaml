@@ -4,11 +4,19 @@ services:
       dockerfile: Dockerfile
     image: thd/frontend_api
     container_name: THD_Frontend_API
+    hostname: THD_Frontend_API
     restart: unless-stopped
     ports:
       - 8000:8000
+    environment:
+      - DB_MANAGER_PORT = 50051
+      - DB_Manager = THD_DB_Manager
+      - MONGO_MANAGER_PORT = 50051
+      - MONGO_MANAGER = THD_Mongo_Manager
     depends_on:
       DBManager:
+        condition: service_started
+      Mongo_Manager:
         condition: service_started
 
   Postgres:
@@ -43,5 +51,40 @@ services:
       Postgres:
         condition: service_healthy
 
+  Mongo:
+    build:
+      context: https://github.com/THD-C/Mongo.git
+      secrets:
+        - github_token
+    image: thd/mongo
+    container_name: THD_Mongo
+    hostname: Mongo
+    restart: unless-stopped
+    depends_on:
+      DBManager:
+        condition: service_started
+    ports:
+      - 27017:27017
+    volumes:
+      - MO-Data:/data/db
+
+  Mongo_Manager:
+    build: https://github.com/THD-C/Mongo_Manager.git
+    image: thd/mongo_manager
+    container_name: THD_Mongo_Manager
+    hostname: THD_Mongo_Manager
+    restart: unless-stopped
+    environment:
+      - MONGO_URL=mongodb://Mongo/THDC
+    ports:
+      - 50052:50051
+    depends_on:
+      Mongo:
+        condition: service_started
+
+secrets:
+  github_token:
+    file: ./.github_token
 volumes:
   PG-Data:
+  MO-Data:
