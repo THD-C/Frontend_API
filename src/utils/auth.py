@@ -12,7 +12,6 @@ message = secret_pb2.SecretName(name = "JWT_SECRET_KEY")
 response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
 
 JWT_SECRET_KEY = response_secret.value
-print(JWT_SECRET_KEY)
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
