@@ -6,18 +6,19 @@ services:
     container_name: THD_Frontend_API
     hostname: THD_Frontend_API
     restart: unless-stopped
+    environment:
+      - DB_MANAGER_PORT=50051
+      - DB_MANAGER=THD_DB_Manager
+      - MONGO_MANAGER_PORT=50051
+      - MONGO_MANAGER=THD_Mongo_Manager
     ports:
       - 8000:8000
-    environment:
-      - DB_MANAGER_PORT = 50051
-      - DB_Manager = THD_DB_Manager
-      - MONGO_MANAGER_PORT = 50051
-      - MONGO_MANAGER = THD_Mongo_Manager
     depends_on:
       DBManager:
         condition: service_started
       Mongo_Manager:
         condition: service_started
+
 
   Postgres:
     build: https://github.com/THD-C/Postgres.git
@@ -46,7 +47,7 @@ services:
       - 50051:50051
     environment:
       - POSTGRES_URL=postgresql://default:PL_tech_hand_elk@Postgres:5432/thdc
-      - DROP_EXISTING_DB=True
+      - DROP_EXISTING_DB=False
     depends_on:
       Postgres:
         condition: service_healthy
