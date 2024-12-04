@@ -15,7 +15,6 @@ from user import user_pb2
 message = secret_pb2.SecretName(name = "GOOGLE_CLIENT_ID")
 response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
 GOOGLE_CLIENT_ID = response_secret.value
-print(GOOGLE_CLIENT_ID)
 
 
 class Credentials(BaseModel):
