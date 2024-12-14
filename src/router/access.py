@@ -176,6 +176,7 @@ def register_user(registerData: RegisterData):
 }, description="enables access with google account")
 def auth_google(token: TokenRequest):
     try:
+        print(f'token.OAuth_token: {token.OAuth_token} | requests.Request(): {requests.Request()} | GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}')
         token_id_info = id_token.verify_token(token.OAuth_token, requests.Request(), GOOGLE_CLIENT_ID)
         user_id = token_id_info.get("sub")
         email = token_id_info.get("email")
