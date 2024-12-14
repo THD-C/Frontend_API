@@ -196,5 +196,6 @@ def auth_google(token: TokenRequest):
             else:
                 return e
 
-    except ValueError:
+    except ValueError as e:
+        print(e)
         raise HTTPException(status_code=400, detail="invalid_token")
