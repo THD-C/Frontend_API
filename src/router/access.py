@@ -12,9 +12,14 @@ from src.utils.auth import create_jwt_token
 from user import user_pb2
 
 
-message = secret_pb2.SecretName(name = "GOOGLE_CLIENT_ID")
-response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
-GOOGLE_CLIENT_ID = response_secret.value
+try:
+    message = secret_pb2.SecretName(name = "GOOGLE_CLIENT_ID")
+    response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
+    print(response_secret)
+    GOOGLE_CLIENT_ID = response_secret.value
+    print(f'RETRIEVED GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}')
+except Exception as e:
+    print(e)
 
 
 class Credentials(BaseModel):
