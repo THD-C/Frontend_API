@@ -22,7 +22,8 @@ class OrderDetails(BaseModel):
 transaction_types_mapper = {
     "ORDER_TYPE_STOP_LOSS": order_type_pb2.OrderType.ORDER_TYPE_STOP_LOSS,
     "ORDER_TYPE_TAKE_PROFIT": order_type_pb2.OrderType.ORDER_TYPE_TAKE_PROFIT,
-    "ORDER_TYPE_INSTANT": order_type_pb2.OrderType.ORDER_TYPE_INSTANT
+    "ORDER_TYPE_INSTANT": order_type_pb2.OrderType.ORDER_TYPE_INSTANT,
+    "ORDER_TYPE_PENDING": order_type_pb2.OrderType.ORDER_TYPE_PENDING
 }
 
 transaction_side_mapper = {

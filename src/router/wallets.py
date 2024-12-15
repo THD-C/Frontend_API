@@ -138,7 +138,10 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     }
 }, description="Update of wallet. Fields id and value are obligatory.")
 def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
-    get_wallet_by_id(update_wallet_data.id, request)
+    wallet_details = get_wallet_by_id(update_wallet_data.id, request)
+    wallet_value = float(wallet_details["value"])
+
+    update_wallet_data.value = str(float(wallet_value) + float(update_wallet_data.value))
 
     data_for_update = wallet_pb2.Wallet(**update_wallet_data.dict())
 
