@@ -10,7 +10,9 @@ class OrderType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     ORDER_TYPE_STOP_LOSS: _ClassVar[OrderType]
     ORDER_TYPE_TAKE_PROFIT: _ClassVar[OrderType]
     ORDER_TYPE_INSTANT: _ClassVar[OrderType]
+    ORDER_TYPE_PENDING: _ClassVar[OrderType]
 ORDER_TYPE_UNDEFINED: OrderType
 ORDER_TYPE_STOP_LOSS: OrderType
 ORDER_TYPE_TAKE_PROFIT: OrderType
 ORDER_TYPE_INSTANT: OrderType
+ORDER_TYPE_PENDING: OrderType

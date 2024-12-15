@@ -24,13 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16order/order_type.proto\x12\x05order*s\n\tOrderType\x12\x18\n\x14ORDER_TYPE_UNDEFINED\x10\x00\x12\x18\n\x14ORDER_TYPE_STOP_LOSS\x10\x01\x12\x1a\n\x16ORDER_TYPE_TAKE_PROFIT\x10\x02\x12\x16\n\x12ORDER_TYPE_INSTANT\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16order/order_type.proto\x12\x05order*\x8b\x01\n\tOrderType\x12\x18\n\x14ORDER_TYPE_UNDEFINED\x10\x00\x12\x18\n\x14ORDER_TYPE_STOP_LOSS\x10\x01\x12\x1a\n\x16ORDER_TYPE_TAKE_PROFIT\x10\x02\x12\x16\n\x12ORDER_TYPE_INSTANT\x10\x03\x12\x16\n\x12ORDER_TYPE_PENDING\x10\x04\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'order.order_type_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ORDERTYPE']._serialized_start=33
-  _globals['_ORDERTYPE']._serialized_end=148
+  _globals['_ORDERTYPE']._serialized_start=34
+  _globals['_ORDERTYPE']._serialized_end=173
 # @@protoc_insertion_point(module_scope)
