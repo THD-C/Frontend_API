@@ -8,7 +8,11 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-CMD ["python", "proto_gen.py"]
+RUN curl -s -L -o thdcgrpc.tar.gz https://github.com/THD-C/Protocol/releases/latest/download/thdcgrpc.tar.gz \
+    && tar -xzf thdcgrpc.tar.gz \
+    && rm thdcgrpc.tar.gz \
+    && cp -r thdcgrpc/* . \
+    && rm -r thdcgrpc
 
 
 CMD ["python", "main.py"]
