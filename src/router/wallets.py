@@ -8,6 +8,7 @@ from user import user_detail_pb2
 from wallet import wallet_pb2
 from src.utils.auth import verify_user
 
+from src.utils.logger import logger
 
 class WalletCreationData(BaseModel):
     id: str | None = ""
@@ -84,11 +85,13 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
+        logger.info("Creating wallet successfully performed")
         return MessageToDict(response, preserving_proto_field_name=True)
-
+    logger.warning("Wallet creation failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
 
@@ -150,11 +153,13 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
+        logger.info("Updated wallet")
         return MessageToDict(response, preserving_proto_field_name=True)
-
+    logger.info("Failed to update wallet")
     raise HTTPException(status_code=400, detail="operation_failed")
 
 
@@ -227,11 +232,14 @@ def get_wallets(request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if len(response.wallets) == 0:
+        logger.info("No wallets found")
         raise HTTPException(status_code=204)
     else:
+        logger.info("Found wallets")
         return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -294,14 +302,17 @@ def get_wallet_by_id(wallet_id, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id == "":
+        logger.info("No wallet with given id")
         raise HTTPException(status_code=204)
 
     if str(jwt_payload.get("id")) != response.user_id:
+        logger.warning("Unauthorized user tried to fetch wallet details")
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
-
+    logger.info(f"Fetched wallet with id: {wallet_id}")
     return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -357,6 +368,7 @@ def delete_wallet(wallet_id, request: Request):
     try:
         wallet_data = get_wallet_by_id(wallet_id=wallet_id, request=request)
     except HTTPException as e:
+        logger.warning(f"Problems with fetching wallet: {e}")
         raise e
 
     try:
@@ -365,9 +377,11 @@ def delete_wallet(wallet_id, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id == "":
+        logger.warning(f"Deleting wallet failed")
         raise HTTPException(status_code=204)
-
+    logger.info(f"Deleted wallet: {wallet_id}")
     return MessageToDict(response, preserving_proto_field_name=True)

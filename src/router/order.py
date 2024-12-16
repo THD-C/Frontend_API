@@ -8,6 +8,7 @@ from order import order_pb2, order_type_pb2, order_status_pb2, order_side_pb2
 from src.router.wallets import create_wallet, WalletCreationData
 from src.utils.auth import verify_user
 
+from src.utils.logger import logger
 
 class OrderDetails(BaseModel):
     currency_used_wallet_id: str  # Which currency is used i.e. BUY sth with USD, SELL BTC
@@ -94,6 +95,7 @@ def create_order(orderDetails: OrderDetails, request: Request):
     order_side_order_details = transaction_side_mapper.get(orderDetails.side)
 
     if order_type_order_details is None or order_side_order_details is None:
+        logger.warning("Incorrect types provided")
         raise HTTPException(status_code=400, detail="operation_failed")
 
     crypto_wallet_request_data = WalletCreationData(currency=orderDetails.currency_target)
@@ -101,6 +103,7 @@ def create_order(orderDetails: OrderDetails, request: Request):
         wallet_creation_response = create_wallet(wallet_data=crypto_wallet_request_data,
                                                  request=request)
     except HTTPException as e:
+        logger.warning(f"Creation wallet error: {e}")
         raise e
 
     orderRequest = order_pb2.OrderDetails(user_id=jwt_payload.get("id"),
@@ -119,11 +122,13 @@ def create_order(orderDetails: OrderDetails, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
+        logger.info(f"Order with id: {response.id} placed successfully")
         return MessageToDict(response)
-
+    logger.warning("Placing order failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
 
@@ -190,13 +195,17 @@ def get_order(order_id, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id == "":
+        logger.info("No order found")
         raise HTTPException(status_code=204)
     else:
         if str(jwt_payload.get("id")) != response.user_id:
+            logger.warning("Unauthorized user tried to fetch data")
             raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
+        logger.info("Fetched order")
         return MessageToDict(response)
 
 
@@ -262,11 +271,14 @@ def delete_order(order_id, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id == "":
+        logger.error(f"No order with provided id: {order_id}")
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
+        logger.info(f"Order with provided id: {order_id} deleted")
         return MessageToDict(response)
 
 
@@ -349,9 +361,12 @@ def get_orders(request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if len(response.orders) == 0:
+        logger.error("No orders found for logged user")
         raise HTTPException(status_code=204)
     else:
+        logger.info("Orders found")
         return MessageToDict(response)

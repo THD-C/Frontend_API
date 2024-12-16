@@ -4,6 +4,16 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class ChangePass(_message.Message):
+    __slots__ = ("login", "old_password", "new_password")
+    LOGIN_FIELD_NUMBER: _ClassVar[int]
+    OLD_PASSWORD_FIELD_NUMBER: _ClassVar[int]
+    NEW_PASSWORD_FIELD_NUMBER: _ClassVar[int]
+    login: str
+    old_password: str
+    new_password: str
+    def __init__(self, login: _Optional[str] = ..., old_password: _Optional[str] = ..., new_password: _Optional[str] = ...) -> None: ...
+
 class RegUser(_message.Message):
     __slots__ = ("username", "email", "password", "name", "surname", "street", "building", "city", "postal_code", "country")
     USERNAME_FIELD_NUMBER: _ClassVar[int]
