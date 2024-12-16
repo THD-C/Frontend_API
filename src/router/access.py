@@ -11,15 +11,15 @@ from src.connections import secret_stub, user_stub
 from src.utils.auth import create_jwt_token
 from user import user_pb2
 
+from src.utils.logger import logger
+
 
 try:
     message = secret_pb2.SecretName(name = "GOOGLE_CLIENT_ID")
     response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
-    print(response_secret)
     GOOGLE_CLIENT_ID = response_secret.value
-    print(f'RETRIEVED GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}')
-except Exception as e:
-    print(e)
+except RpcError as err:
+    logger.error(f"Error retrieving secret: {err}")
 
 
 class Credentials(BaseModel):
@@ -83,6 +83,7 @@ def login(credentials: Credentials):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success:
@@ -93,9 +94,9 @@ def login(credentials: Credentials):
                              "authScheme": 'Bearer',
                              "email": response.email,
                              "username": response.username}
-
+        logger.info(f"User with username: {response.username} logged in")
         return endpoint_response
-
+    logger.warning("User not logged in - invalid credentials")
     raise HTTPException(status_code=400, detail="invalid_credentials")
 
 
@@ -138,13 +139,16 @@ def register_user(registerData: RegisterData):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success is False:
+        logger.warning("Occupied credentials for data given")
         raise HTTPException(status_code=400, detail="email_or_username_occupied")
 
     login_data = Credentials(login=registerData.email, password=registerData.password)
     login_response = login(login_data)
+    logger.info(f"Account created successfully. Permissions granted for user {login_response["username"]}")
     return login_response
 
 
@@ -181,27 +185,27 @@ def register_user(registerData: RegisterData):
 }, description="enables access with google account")
 def auth_google(token: TokenRequest):
     try:
-        print(f'token.OAuth_token: {token.OAuth_token} | requests.Request(): {requests.Request()} | GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}')
         token_id_info = id_token.verify_token(token.OAuth_token, requests.Request(), GOOGLE_CLIENT_ID)
         user_id = token_id_info.get("sub")
         email = token_id_info.get("email")
-        print(email)
         pass_base = user_id + email
         hashed_password = hashlib.sha256(pass_base.encode("utf-8")).hexdigest()
 
         register_data = RegisterData(username=email, email=email, password=hashed_password)
         try:
             register_response = register_user(register_data)
-            print(register_response)
+            logger.info("Successfully registered user with gmail")
+
             return register_response
         except HTTPException as e:
             if e.status_code == 400:
                 login_data = Credentials(login=email, password=hashed_password)
                 login_response = login(login_data)
+                logger.info("User logged in using google")
                 return login_response
             else:
                 return e
 
     except ValueError as e:
-        print(e)
+        logger.error(f"Error with google authorization: {e}")
         raise HTTPException(status_code=400, detail="invalid_token")

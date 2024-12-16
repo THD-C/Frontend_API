@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from src.router import access, wallets, user, order
-
+from src.utils.logger import logger
 
 app = FastAPI()
 
@@ -29,4 +29,5 @@ app.include_router(order.order, prefix="/api/order")
 
 
 if __name__ == "__main__":
+    logger.info("Server starting...")
     uvicorn.run(app, host="0.0.0.0", port=8000)

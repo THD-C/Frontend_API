@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from src.connections import user_stub
 from src.utils.auth import verify_user
 from user import user_pb2
+
+from src.utils.logger import logger
+
 user = APIRouter(tags=['User'])
 
 
@@ -85,11 +88,14 @@ def get_user_details(request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.username == "":
+        logger.warning("No user found")
         raise HTTPException(status_code=204)
     else:
+        logger.info("User's details found")
         return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -151,16 +157,18 @@ def update_user_details(update_data: UpdateUserData, request: Request):
 
     user_message = user_pb2.ReqUpdateUser(**update_data.dict(), id=jwt_payload.get("id"))
     try:
-
         response: user_pb2.ResultResponse = user_stub.Update(user_message)
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success is False:
+        logger.warning("Updating user details failed")
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
+        logger.info("Updating user details completed")
         return MessageToDict(user_message, preserving_proto_field_name=True)
 
 
@@ -217,11 +225,14 @@ def update_password(updatePassword: UpdatePassword, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success is False:
+        logger.info("User passed wrong old password")
         raise HTTPException(status_code=400, detail="invalid_old_password")
 
+    logger.info("Changing password completed")
     return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -276,9 +287,12 @@ def delete_user(userDelete: DeleteUser, request: Request):
     except RpcError as e:
         print("gRPC error details:", e.details())
         print("gRPC status code:", e.code())
+        logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success is False:
+        logger.warning("Deleting user failed")
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
+        logger.info("User deleted")
         return MessageToDict(response, preserving_proto_field_name=True)
