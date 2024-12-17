@@ -77,8 +77,8 @@ services:
     restart: unless-stopped
     environment:
       - MONGO_URL=mongodb://Mongo/THDC
-    # ports:
-    #   - 50052:50051
+    ports:
+      - 50052:50051
     depends_on:
       Mongo:
         condition: service_started
