@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s 
+  evaluation_interval: 15s 
+
+alerting:
+  alertmanagers:
+
+rule_files:
+
+
+scrape_configs:
+  - job_name: "DB_Manager"
+    static_configs:
+      - targets: [
+          "THD_Frontend_API:8111"
+        ]

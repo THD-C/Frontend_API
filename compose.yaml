@@ -83,9 +83,64 @@ services:
       Mongo:
         condition: service_started
 
+  memcached:
+    profiles:
+      - Telemetry
+    container_name: MemCached_Tempo
+    restart: unless-stopped
+    image: memcached:1.6.29
+    ports:
+      - "11211:11211"
+    environment:
+      - MEMCACHED_MAX_MEMORY=64m  # Set the maximum memory usage
+      - MEMCACHED_THREADS=4       # Number of threads to use
+
+  tempo:
+    profiles:
+      - Telemetry
+    container_name: Tempo
+    hostname: Tempo
+    restart: unless-stopped
+    image: grafana/tempo:main-a46ac6d
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+      - Tempo_Data:/var/tempo
+    ports:
+      - 14268:14268  # jaeger ingest
+      - 3200:3200   # tempo
+      - 9095:9095 # tempo grpc
+      - 4317:4317  # otlp grpc
+      - 4318:4318  # otlp http
+      - 9411:9411   # zipkin
+    depends_on:
+      - memcached
+
+  prometheus:
+    profiles:
+      - Telemetry
+    container_name: Prometheus
+    hostname: Prometheus
+    restart: unless-stopped
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=14d
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus.yaml
+      - Prometheus_Data:/prometheus
+    ports:
+      - 9999:9090
+
 secrets:
   github_token:
     file: ./.github_token
 volumes:
   PG-Data:
   MO-Data:
+  Tempo_Data:
+  Prometheus_Data:
