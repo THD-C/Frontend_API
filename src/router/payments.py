@@ -58,7 +58,8 @@ payments = APIRouter(tags=["Payments"])
         "description": "Creation of wallet failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "not_supported_currency"},
+                            {"detail": "invalid_nominal"}]
             }
         }
     },
@@ -102,7 +103,7 @@ def payment(payment_details: MakePayment, request: Request):
     jwt_payload = verify_user(auth_header)
 
     if payment_details.currency not in SUPPORTED_CURRENCIES:
-        raise HTTPException(400, "invalid_currency")
+        raise HTTPException(400, "not_supported_currency")
 
     if float(payment_details.nominal) <= 0:
         raise HTTPException(400, 'invalid_nominal')
