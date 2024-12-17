@@ -1,6 +1,7 @@
 annotated-types==0.7.0
 anyio==4.7.0
 APScheduler==3.10.4
+asgiref==3.8.1
 cachetools==5.5.0
 certifi==2024.12.14
 charset-normalizer==3.4.0
@@ -20,10 +21,13 @@ opentelemetry-api==1.29.0
 opentelemetry-exporter-otlp-proto-common==1.29.0
 opentelemetry-exporter-otlp-proto-grpc==1.29.0
 opentelemetry-instrumentation==0.50b0
+opentelemetry-instrumentation-asgi==0.50b0
+opentelemetry-instrumentation-fastapi==0.50b0
 opentelemetry-instrumentation-grpc==0.50b0
 opentelemetry-proto==1.29.0
 opentelemetry-sdk==1.29.0
 opentelemetry-semantic-conventions==0.50b0
+opentelemetry-util-http==0.50b0
 packaging==24.2
 prometheus_client==0.21.1
 protobuf==5.28.3
