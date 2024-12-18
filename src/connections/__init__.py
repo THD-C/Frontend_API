@@ -3,6 +3,7 @@ from opentelemetry.instrumentation.grpc import GrpcInstrumentorClient
 from prometheus_client import start_http_server
 from py_grpc_prometheus.prometheus_client_interceptor import PromClientInterceptor
 import src.utils.OpenTelemetry.OpenTelemetry as oTEL
+from password import password_pb2_grpc
 from src.utils import DB_MANAGER_PORT, THD_DB_Manager, MONGO_MANAGER_PORT, MONGO_MANAGER
 from user import user_pb2_grpc
 from wallet import wallet_pb2_grpc
@@ -30,5 +31,6 @@ try:
     mongo_manager_channel = grpc.intercept_channel(mongo_manager_channel, prometheus_interceptor)
     
     secret_stub = secret_pb2_grpc.SecretStoreStub(mongo_manager_channel)
+    password_stub = password_pb2_grpc.PasswordCheckerStub(mongo_manager_channel)
 except grpc.RpcError as e:
     logger.error(f"Error occured when connecting to services: {e}")
