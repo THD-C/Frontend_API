@@ -6,12 +6,6 @@ from src.connections import password_stub
 from password import password_pb2
 
 def hash_password(password):
-
-    try:
-        validate_password(password=password)
-    except ValueError as e:
-        raise e
-
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 def validate_password(password: str) -> bool:
