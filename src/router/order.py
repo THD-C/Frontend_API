@@ -94,7 +94,8 @@ def create_order(orderDetails: OrderDetails, request: Request):
     order_type_order_details = transaction_types_mapper.get(orderDetails.type)
     order_side_order_details = transaction_side_mapper.get(orderDetails.side)
 
-    if order_type_order_details is None or order_side_order_details is None:
+    if order_type_order_details is None or order_side_order_details is None\
+            or float(orderDetails.price) <= 0  or float(orderDetails.nominal) <= 0:
         logger.warning("Incorrect types provided")
         raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -187,6 +188,9 @@ def create_order(orderDetails: OrderDetails, request: Request):
 def get_order(order_id, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
+
+    if int(order_id) < 1 or type(order_id) != int:
+        raise HTTPException(status_code=400, detail="invalid_order_id")
 
     order_message = order_pb2.OrderID(id=order_id)
 

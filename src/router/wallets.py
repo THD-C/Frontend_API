@@ -3,12 +3,13 @@ from fastapi import APIRouter, HTTPException, Request
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import  wallet_stub
+from src.connections import wallet_stub
 from user import user_detail_pb2
 from wallet import wallet_pb2
 from src.utils.auth import verify_user
 
 from src.utils.logger import logger
+
 
 class WalletCreationData(BaseModel):
     id: str | None = ""
@@ -42,7 +43,9 @@ wallets = APIRouter(tags=["Wallets"])
         "description": "Creation of wallet failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "negative_value"}
+                            ]
             }
         }
     },
@@ -75,6 +78,10 @@ wallets = APIRouter(tags=["Wallets"])
     }
 }, description='Returns details about created or existing wallet')
 def create_wallet(wallet_data: WalletCreationData, request: Request):
+    wallet_value = float(wallet_data.value)
+    if wallet_value < 0:
+        raise HTTPException(400, detail="negative_value")
+
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
@@ -108,7 +115,8 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
         "description": "Update of wallet failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "negative_value"}]
             }
         }
     },
@@ -142,7 +150,10 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
 }, description="Update of wallet. Fields id and value are obligatory.")
 def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     wallet_details = get_wallet_by_id(update_wallet_data.id, request)
-    wallet_value = float(wallet_details["value"])
+    wallet_value = float(update_wallet_data.value)
+
+    if wallet_value < 0:
+        raise HTTPException(400, detail="negative_value")
 
     update_wallet_data.value = str(float(wallet_value) + float(update_wallet_data.value))
 
@@ -255,9 +266,10 @@ def get_wallets(request: Request):
     400: {
         "description": "Getting list of wallets failed",
         "content": {
-            "application/json": {
-                "example": {"detail": "operation_failed"}
-            }
+            "application/json": [
+                {"detail": "operation_failed"},
+                {"detail": "wallet_id_incorrect_value"}
+            ]
         }
     },
     401: {
@@ -292,6 +304,9 @@ def get_wallets(request: Request):
     }
 }, description="Returns wallet details of specified id")
 def get_wallet_by_id(wallet_id, request: Request):
+    if type(wallet_id) == int or wallet_id is None or wallet_id <= 0:
+        raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
+
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
@@ -326,10 +341,12 @@ def get_wallet_by_id(wallet_id, request: Request):
         }
     },
     400: {
-        "description": "Getting list of wallets failed",
+        "description": "Deleting wallet with given id failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "wallet_id_incorrect_value"}
+                            ]
             }
         }
     },
@@ -348,7 +365,7 @@ def get_wallet_by_id(wallet_id, request: Request):
         }
     },
     204: {
-        "description": "User have no wallets"
+        "description": "No such wallet"
     },
     200: {
         "description": "Details of removed wallet",
@@ -365,6 +382,9 @@ def get_wallet_by_id(wallet_id, request: Request):
     }
 }, description="Deletes wallet of specified id")
 def delete_wallet(wallet_id, request: Request):
+    if type(wallet_id) != int or int(wallet_id) <= 0:
+        raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
+
     try:
         wallet_data = get_wallet_by_id(wallet_id=wallet_id, request=request)
     except HTTPException as e:

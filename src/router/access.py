@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import APIRouter, HTTPException
 from grpc import RpcError
 from pydantic import BaseModel
@@ -11,7 +13,7 @@ from src.utils.auth import create_jwt_token
 from user import user_pb2
 
 from src.utils.logger import logger
-from src.utils.PasswordsValidator.password_validator import hash_password
+from src.utils.PasswordsValidator.password_validator import hash_password, validate_password
 
 try:
     message = secret_pb2.SecretName(name="GOOGLE_CLIENT_ID")
@@ -78,6 +80,7 @@ access = APIRouter(tags=['Auth'])
     }
 }, description="Authorize the user who has the account already created.")
 def login(credentials: Credentials):
+    credentials.password = hash_password(credentials.password)
     credentials = user_pb2.AuthUser(**credentials.dict())
 
     try:
@@ -135,6 +138,7 @@ def login(credentials: Credentials):
 }, description="Create and authorize new account.")
 def register_user(registerData: RegisterData):
     try:
+        validate_password(registerData.password)
         registerData.password = hash_password(registerData.password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
