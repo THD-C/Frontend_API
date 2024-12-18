@@ -90,8 +90,6 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     try:
         response = wallet_stub.CreateWallet(wallet_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -162,8 +160,6 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     try:
         response: wallet_pb2.Wallet = wallet_stub.UpdateWallet(data_for_update)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -241,8 +237,6 @@ def get_wallets(request: Request):
     try:
         response: wallet_pb2.WalletList = wallet_stub.GetUsersWallets(user_data)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -315,8 +309,6 @@ def get_wallet_by_id(wallet_id, request: Request):
     try:
         response: wallet_pb2.Wallet = wallet_stub.GetWallet(wallet_data)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -395,8 +387,6 @@ def delete_wallet(wallet_id, request: Request):
         wallet_id_message = wallet_pb2.Wallet(id=wallet_data.get("id"))
         response: wallet_pb2.Wallet = wallet_stub.DeleteWallet(wallet_id_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 

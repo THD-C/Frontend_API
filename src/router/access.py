@@ -86,8 +86,6 @@ def login(credentials: Credentials):
     try:
         response: user_pb2.AuthResponse = user_stub.Authenticate(credentials)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -148,8 +146,6 @@ def register_user(registerData: RegisterData):
     try:
         response: user_pb2.RegResponse = user_stub.Register(data_for_grpc)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 

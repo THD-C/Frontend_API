@@ -121,8 +121,6 @@ def create_order(orderDetails: OrderDetails, request: Request):
     try:
         response: order_pb2.OrderDetails = order_stub.CreateOrder(orderRequest)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -197,8 +195,6 @@ def get_order(order_id, request: Request):
     try:
         response: order_pb2.OrderDetails = order_stub.GetOrder(order_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -363,8 +359,6 @@ def get_orders(request: Request):
     try:
         response: order_pb2.OrderList = order_stub.GetOrderList(user_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
