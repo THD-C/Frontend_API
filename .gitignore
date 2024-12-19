@@ -164,3 +164,4 @@ cython_debug/
 
 #Logs
 ./app.log
+./tests/app.log
