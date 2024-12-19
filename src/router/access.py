@@ -135,6 +135,7 @@ def login(credentials: Credentials):
     }
 }, description="Create and authorize new account.")
 def register_user(registerData: RegisterData):
+    no_hashed_password = registerData.password
     try:
         validate_password(registerData.password)
         registerData.password = hash_password(registerData.password)
@@ -153,7 +154,7 @@ def register_user(registerData: RegisterData):
         logger.warning("Occupied credentials for data given")
         raise HTTPException(status_code=400, detail="email_or_username_occupied")
 
-    login_data = Credentials(login=registerData.email, password=registerData.password)
+    login_data = Credentials(login=registerData.email, password=no_hashed_password)
     login_response = login(login_data)
     logger.info(f"Account created successfully. Permissions granted for user {login_response["username"]}")
     return login_response
