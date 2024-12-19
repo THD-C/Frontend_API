@@ -1,4 +1,5 @@
 from google.protobuf.json_format import MessageToDict
+from urllib.parse import urlparse
 from fastapi import APIRouter, HTTPException, Request
 from grpc import RpcError
 from pydantic import BaseModel
@@ -14,19 +15,6 @@ from src.utils.payment_scheduler import get_session_status
 
 SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'PLN']
 
-success_urls = [
-    "http://localhost:4200/payment/success",
-    "http://localhost/payment/success",
-    "http://thdc/payment/success",
-    "http://thdc.tail8ec47f.ts.net/payment/success"
-]
-
-failure_urls = [
-    "http://localhost:4200/payment/fail",
-    "http://localhost/payment/fail",
-    "http://thdc/payment/fail",
-    "http://thdc.tail8ec47f.ts.net/payment/fail"
-]
 
 try:
     message = secret_pb2.SecretName(name="STRIPE_SECRET_KEY")
@@ -55,7 +43,7 @@ payments = APIRouter(tags=["Payments"])
         }
     },
     400: {
-        "description": "Creation of wallet failed",
+        "description": "Creation of payment failed",
         "content": {
             "application/json": {
                 "example": [{"detail": "not_supported_currency"},
@@ -78,13 +66,11 @@ payments = APIRouter(tags=["Payments"])
         }
     },
     200: {
-        "description": "Details of created wallet",
+        "description": "Details of created payment",
         "content": {
             "application/json": {
                 "example": [
                     {"session_url": "string i.e. https://stripe.com/payment/dsgq35211gs2",
-                     "success_urls": success_urls,
-                     "failure_urls": failure_urls,
                      "payment_details": {
                             "id": "dsgq35211gs2",
                             "currency": "PLN",
@@ -112,6 +98,13 @@ def payment(payment_details: MakePayment, request: Request):
     operation_nominal = float(payment_details.nominal) * 100
     user_id = jwt_payload['id']
 
+    origin = request.headers.get('Origin') or request.headers.get('Referer')
+    parsed_url = urlparse(origin)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    success_url = f"{base_url}/payment/success"
+    cancel_url = f"{base_url}/payment/fail"
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -126,15 +119,11 @@ def payment(payment_details: MakePayment, request: Request):
                 'quantity': 1
             }],
             mode='payment',
-            success_url=success_urls[0],
-            cancel_url=failure_urls[0],
-            metadata={
-                "success_urls": ','.join(success_urls),
-                "failure_urls": ','.join(failure_urls),
-            }
+            success_url=success_url,
+            cancel_url=cancel_url
         )
     except stripe.error.StripeError as e:
-        logger.error(f"Error creating payment session: {e}")
+        logger.error(f"Error creating payment session: {e}; {success_url}; {cancel_url}")
         raise HTTPException(400, 'invalid_payment_session')
 
     try:
@@ -151,9 +140,7 @@ def payment(payment_details: MakePayment, request: Request):
 
     response = [{
         "session_url": session.url,
-        "payment_details": MessageToDict(payment_details_response, preserving_proto_field_name=True),
-        "success_urls": success_urls,
-        "failure_urls": failure_urls
+        "payment_details": MessageToDict(payment_details_response, preserving_proto_field_name=True)
     }]
 
     return response
