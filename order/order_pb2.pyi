@@ -49,6 +49,20 @@ class UserID(_message.Message):
     id: str
     def __init__(self, id: _Optional[str] = ...) -> None: ...
 
+class OrderFilter(_message.Message):
+    __slots__ = ("user_id", "wallet_id", "status", "type", "side")
+    USER_ID_FIELD_NUMBER: _ClassVar[int]
+    WALLET_ID_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    SIDE_FIELD_NUMBER: _ClassVar[int]
+    user_id: str
+    wallet_id: str
+    status: _order_status_pb2.OrderStatus
+    type: _order_type_pb2.OrderType
+    side: _order_side_pb2.OrderSide
+    def __init__(self, user_id: _Optional[str] = ..., wallet_id: _Optional[str] = ..., status: _Optional[_Union[_order_status_pb2.OrderStatus, str]] = ..., type: _Optional[_Union[_order_type_pb2.OrderType, str]] = ..., side: _Optional[_Union[_order_side_pb2.OrderSide, str]] = ...) -> None: ...
+
 class OrderList(_message.Message):
     __slots__ = ("orders",)
     ORDERS_FIELD_NUMBER: _ClassVar[int]

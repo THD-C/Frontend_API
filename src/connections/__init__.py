@@ -10,6 +10,7 @@ from wallet import wallet_pb2_grpc
 from order import order_pb2_grpc
 from payment import payment_pb2_grpc
 from secret import secret_pb2_grpc
+from password import password_pb2_grpc
 
 from src.utils.logger import logger
 
@@ -31,5 +32,6 @@ try:
     mongo_manager_channel = grpc.intercept_channel(mongo_manager_channel, prometheus_interceptor)
     
     secret_stub = secret_pb2_grpc.SecretStoreStub(mongo_manager_channel)
+    password_stub = password_pb2_grpc.PasswordCheckerStub(mongo_manager_channel)
 except grpc.RpcError as e:
     logger.error(f"Error occured when connecting to services: {e}")

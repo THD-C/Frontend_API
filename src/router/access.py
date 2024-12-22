@@ -1,7 +1,8 @@
+import hashlib
+
 from fastapi import APIRouter, HTTPException
 from grpc import RpcError
 from pydantic import BaseModel
-import hashlib
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -12,10 +13,10 @@ from src.utils.auth import create_jwt_token
 from user import user_pb2
 
 from src.utils.logger import logger
-
+from src.utils.PasswordsValidator.password_validator import hash_password, validate_password
 
 try:
-    message = secret_pb2.SecretName(name = "GOOGLE_CLIENT_ID")
+    message = secret_pb2.SecretName(name="GOOGLE_CLIENT_ID")
     response_secret: secret_pb2.SecretValue = secret_stub.GetSecret(message)
     GOOGLE_CLIENT_ID = response_secret.value
 except RpcError as err:
@@ -39,10 +40,13 @@ class RegisterData(BaseModel):
     postal_code: str | None = ""
     country: str | None = ""
 
+
 class TokenRequest(BaseModel):
     OAuth_token: str
 
+
 access = APIRouter(tags=['Auth'])
+
 
 @access.post("/login", responses={
     500: {
@@ -76,13 +80,12 @@ access = APIRouter(tags=['Auth'])
     }
 }, description="Authorize the user who has the account already created.")
 def login(credentials: Credentials):
-    credentials = user_pb2.AuthUser(**credentials.dict())
+    credentials.password = hash_password(credentials.password)
+    credentials = user_pb2.AuthUser(**credentials.model_dump())
 
     try:
         response: user_pb2.AuthResponse = user_stub.Authenticate(credentials)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -132,13 +135,18 @@ def login(credentials: Credentials):
     }
 }, description="Create and authorize new account.")
 def register_user(registerData: RegisterData):
-    data_for_grpc = user_pb2.RegUser(**registerData.dict())
+    no_hashed_password = registerData.password
+    try:
+        validate_password(registerData.password)
+        registerData.password = hash_password(registerData.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    data_for_grpc = user_pb2.RegUser(**registerData.model_dump())
 
     try:
         response: user_pb2.RegResponse = user_stub.Register(data_for_grpc)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -146,13 +154,13 @@ def register_user(registerData: RegisterData):
         logger.warning("Occupied credentials for data given")
         raise HTTPException(status_code=400, detail="email_or_username_occupied")
 
-    login_data = Credentials(login=registerData.email, password=registerData.password)
+    login_data = Credentials(login=registerData.email, password=no_hashed_password)
     login_response = login(login_data)
-    logger.info(f"Account created successfully. Permissions granted for user {login_response["username"]}")
+    logger.info(f"Account created successfully. Permissions granted for user {login_response['username']}")
     return login_response
 
 
-@access.post("/auth-google",responses={
+@access.post("/auth-google", responses={
     500: {
         "description": "Problems occurred inside the server",
         "content": {
@@ -189,7 +197,7 @@ def auth_google(token: TokenRequest):
         user_id = token_id_info.get("sub")
         email = token_id_info.get("email")
         pass_base = user_id + email
-        hashed_password = hashlib.sha256(pass_base.encode("utf-8")).hexdigest()
+        hashed_password = hash_password(pass_base)
 
         register_data = RegisterData(username=email, email=email, password=hashed_password)
         try:

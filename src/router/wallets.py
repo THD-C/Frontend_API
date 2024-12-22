@@ -3,16 +3,18 @@ from fastapi import APIRouter, HTTPException, Request
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import  wallet_stub
+from src.connections import wallet_stub
 from user import user_detail_pb2
 from wallet import wallet_pb2
 from src.utils.auth import verify_user
 
 from src.utils.logger import logger
 
+
 class WalletCreationData(BaseModel):
     id: str | None = ""
     currency: str
+    is_crypto: bool
     value: str | None = "0"
 
 
@@ -42,7 +44,9 @@ wallets = APIRouter(tags=["Wallets"])
         "description": "Creation of wallet failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "negative_value"}
+                            ]
             }
         }
     },
@@ -68,29 +72,32 @@ wallets = APIRouter(tags=["Wallets"])
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
     }
 }, description='Returns details about created or existing wallet')
 def create_wallet(wallet_data: WalletCreationData, request: Request):
+    wallet_value = float(wallet_data.value)
+    if wallet_value < 0:
+        raise HTTPException(400, detail="negative_value")
+
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    wallet_message = wallet_pb2.Wallet(**wallet_data.dict(), user_id=jwt_payload.get("id"))
+    wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"))
 
     try:
         response = wallet_stub.CreateWallet(wallet_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
         logger.info("Creating wallet successfully performed")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
     logger.warning("Wallet creation failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -108,7 +115,8 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
         "description": "Update of wallet failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "negative_value"}]
             }
         }
     },
@@ -134,7 +142,8 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
@@ -142,7 +151,10 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
 }, description="Update of wallet. Fields id and value are obligatory.")
 def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     wallet_details = get_wallet_by_id(update_wallet_data.id, request)
-    wallet_value = float(wallet_details["value"])
+    wallet_value = float(update_wallet_data.value)
+
+    if wallet_value < 0:
+        raise HTTPException(400, detail="negative_value")
 
     update_wallet_data.value = str(float(wallet_value) + float(update_wallet_data.value))
 
@@ -151,14 +163,12 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
     try:
         response: wallet_pb2.Wallet = wallet_stub.UpdateWallet(data_for_update)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
         logger.info("Updated wallet")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
     logger.info("Failed to update wallet")
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -207,13 +217,15 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
                             "id": "1",
                             "currency": "PLN",
                             "value": "250.32",
-                            "user_id": "2"
+                            "user_id": "2",
+                            "is_crypto": False
                         },
                         {
                             "id": "52",
                             "currency": "USD",
                             "value": "0.52",
-                            "user_id": "2"
+                            "user_id": "2",
+                            "is_crypto": False
                         }
                     ]
                 }
@@ -230,8 +242,6 @@ def get_wallets(request: Request):
     try:
         response: wallet_pb2.WalletList = wallet_stub.GetUsersWallets(user_data)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -240,7 +250,7 @@ def get_wallets(request: Request):
         raise HTTPException(status_code=204)
     else:
         logger.info("Found wallets")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
 
 
 @wallets.get("/wallet", responses={
@@ -255,9 +265,10 @@ def get_wallets(request: Request):
     400: {
         "description": "Getting list of wallets failed",
         "content": {
-            "application/json": {
-                "example": {"detail": "operation_failed"}
-            }
+            "application/json": [
+                {"detail": "operation_failed"},
+                {"detail": "wallet_id_incorrect_value"}
+            ]
         }
     },
     401: {
@@ -285,13 +296,17 @@ def get_wallets(request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
     }
 }, description="Returns wallet details of specified id")
 def get_wallet_by_id(wallet_id, request: Request):
+    if type(wallet_id) == int or wallet_id is None or wallet_id <= 0:
+        raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
+
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
@@ -300,8 +315,6 @@ def get_wallet_by_id(wallet_id, request: Request):
     try:
         response: wallet_pb2.Wallet = wallet_stub.GetWallet(wallet_data)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -313,7 +326,7 @@ def get_wallet_by_id(wallet_id, request: Request):
         logger.warning("Unauthorized user tried to fetch wallet details")
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
     logger.info(f"Fetched wallet with id: {wallet_id}")
-    return MessageToDict(response, preserving_proto_field_name=True)
+    return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
 
 
 @wallets.delete("/", responses={
@@ -326,10 +339,12 @@ def get_wallet_by_id(wallet_id, request: Request):
         }
     },
     400: {
-        "description": "Getting list of wallets failed",
+        "description": "Deleting wallet with given id failed",
         "content": {
             "application/json": {
-                "example": {"detail": "operation_failed"}
+                "example": [{"detail": "operation_failed"},
+                            {"detail": "wallet_id_incorrect_value"}
+                            ]
             }
         }
     },
@@ -348,7 +363,7 @@ def get_wallet_by_id(wallet_id, request: Request):
         }
     },
     204: {
-        "description": "User have no wallets"
+        "description": "No such wallet"
     },
     200: {
         "description": "Details of removed wallet",
@@ -358,13 +373,17 @@ def get_wallet_by_id(wallet_id, request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
     }
 }, description="Deletes wallet of specified id")
 def delete_wallet(wallet_id, request: Request):
+    if type(wallet_id) != int or int(wallet_id) <= 0:
+        raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
+
     try:
         wallet_data = get_wallet_by_id(wallet_id=wallet_id, request=request)
     except HTTPException as e:
@@ -375,8 +394,6 @@ def delete_wallet(wallet_id, request: Request):
         wallet_id_message = wallet_pb2.Wallet(id=wallet_data.get("id"))
         response: wallet_pb2.Wallet = wallet_stub.DeleteWallet(wallet_id_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -384,4 +401,4 @@ def delete_wallet(wallet_id, request: Request):
         logger.warning(f"Deleting wallet failed")
         raise HTTPException(status_code=204)
     logger.info(f"Deleted wallet: {wallet_id}")
-    return MessageToDict(response, preserving_proto_field_name=True)
+    return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)

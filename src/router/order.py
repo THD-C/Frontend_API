@@ -10,6 +10,7 @@ from src.utils.auth import verify_user
 
 from src.utils.logger import logger
 
+
 class OrderDetails(BaseModel):
     currency_used_wallet_id: str  # Which currency is used i.e. BUY sth with USD, SELL BTC
     currency_target: str  # Which currency is the goal i.e. buy BTC, get USD from selling BTC
@@ -71,17 +72,17 @@ order = APIRouter(tags=["Order"])
         "content": {
             "application/json": {
                 "example": {
-                    "id": "4",
-                    "userId": "1",
-                    "dateCreated": "2024-12-04T14:26:53.030635Z",
-                    "dateExecuted": "1970-01-01T00:00:00Z",
+                    "id": "1",
+                    "user_id": "1",
+                    "date_created": "2024-12-22T11:56:35.387707Z",
+                    "date_executed": "1970-01-01T00:00:00Z",
                     "status": "ORDER_STATUS_PENDING",
-                    "nominal": "10.0",
-                    "price": "50.0",
+                    "nominal": "50.0",
+                    "price": "100000.0",
                     "type": "ORDER_TYPE_INSTANT",
                     "side": "ORDER_SIDE_BUY",
-                    "cryptoWalletId": "3",
-                    "fiatWalletId": "2"
+                    "crypto_wallet_id": "9",
+                    "fiat_wallet_id": "1"
                 }
             }
         }
@@ -94,11 +95,12 @@ def create_order(orderDetails: OrderDetails, request: Request):
     order_type_order_details = transaction_types_mapper.get(orderDetails.type)
     order_side_order_details = transaction_side_mapper.get(orderDetails.side)
 
-    if order_type_order_details is None or order_side_order_details is None:
+    if order_type_order_details is None or order_side_order_details is None \
+            or float(orderDetails.price) <= 0 or float(orderDetails.nominal) <= 0:
         logger.warning("Incorrect types provided")
         raise HTTPException(status_code=400, detail="operation_failed")
 
-    crypto_wallet_request_data = WalletCreationData(currency=orderDetails.currency_target)
+    crypto_wallet_request_data = WalletCreationData(currency=orderDetails.currency_target, is_crypto=True)
     try:
         wallet_creation_response = create_wallet(wallet_data=crypto_wallet_request_data,
                                                  request=request)
@@ -120,14 +122,12 @@ def create_order(orderDetails: OrderDetails, request: Request):
     try:
         response: order_pb2.OrderDetails = order_stub.CreateOrder(orderRequest)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.id != "":
         logger.info(f"Order with id: {response.id} placed successfully")
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
     logger.warning("Placing order failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -168,17 +168,17 @@ def create_order(orderDetails: OrderDetails, request: Request):
         "content": {
             "application/json": {
                 "example": {
-                    "id": "4",
-                    "userId": "1",
-                    "dateCreated": "2024-12-04T14:26:53.030635Z",
-                    "dateExecuted": "1970-01-01T00:00:00Z",
+                    "id": "1",
+                    "user_id": "1",
+                    "date_created": "2024-12-22T11:56:35.387707Z",
+                    "date_executed": "1970-01-01T00:00:00Z",
                     "status": "ORDER_STATUS_PENDING",
-                    "nominal": "10.0",
-                    "price": "50.0",
+                    "nominal": "50.0",
+                    "price": "100000.0",
                     "type": "ORDER_TYPE_INSTANT",
                     "side": "ORDER_SIDE_BUY",
-                    "cryptoWalletId": "3",
-                    "fiatWalletId": "2"
+                    "crypto_wallet_id": "9",
+                    "fiat_wallet_id": "1"
                 }
             }
         }
@@ -188,13 +188,14 @@ def get_order(order_id, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
+    if int(order_id) < 1 or type(order_id) != int:
+        raise HTTPException(status_code=400, detail="invalid_order_id")
+
     order_message = order_pb2.OrderID(id=order_id)
 
     try:
         response: order_pb2.OrderDetails = order_stub.GetOrder(order_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -206,7 +207,7 @@ def get_order(order_id, request: Request):
             logger.warning("Unauthorized user tried to fetch data")
             raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
         logger.info("Fetched order")
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @order.delete("/", responses={
@@ -245,17 +246,17 @@ def get_order(order_id, request: Request):
         "content": {
             "application/json": {
                 "example": {
-                    "id": "4",
-                    "userId": "1",
-                    "dateCreated": "2024-12-04T14:26:53.030635Z",
-                    "dateExecuted": "1970-01-01T00:00:00Z",
+                    "id": "1",
+                    "user_id": "1",
+                    "date_created": "2024-12-22T11:56:35.387707Z",
+                    "date_executed": "1970-01-01T00:00:00Z",
                     "status": "ORDER_STATUS_PENDING",
-                    "nominal": "10.0",
-                    "price": "50.0",
+                    "nominal": "50.0",
+                    "price": "100000.0",
                     "type": "ORDER_TYPE_INSTANT",
                     "side": "ORDER_SIDE_BUY",
-                    "cryptoWalletId": "3",
-                    "fiatWalletId": "2"
+                    "crypto_wallet_id": "9",
+                    "fiat_wallet_id": "1"
                 }
             }
         }
@@ -279,7 +280,7 @@ def delete_order(order_id, request: Request):
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
         logger.info(f"Order with provided id: {order_id} deleted")
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
 
 @order.get("/orders", responses={
@@ -320,29 +321,29 @@ def delete_order(order_id, request: Request):
                 "example": {
                     "orders": [
                         {
-                            "id": "4",
-                            "userId": "1",
-                            "dateCreated": "2024-12-04T14:26:53.030635Z",
-                            "dateExecuted": "1970-01-01T00:00:00Z",
+                            "id": "1",
+                            "user_id": "1",
+                            "date_created": "2024-12-22T11:56:35.387707Z",
+                            "date_executed": "1970-01-01T00:00:00Z",
                             "status": "ORDER_STATUS_PENDING",
-                            "nominal": "10.0",
-                            "price": "50.0",
+                            "nominal": "50.0",
+                            "price": "100000.0",
                             "type": "ORDER_TYPE_INSTANT",
                             "side": "ORDER_SIDE_BUY",
-                            "cryptoWalletId": "3",
-                            "fiatWalletId": "2"
+                            "crypto_wallet_id": "9",
+                            "fiat_wallet_id": "1"
                         }, {
-                            "id": "4",
-                            "userId": "1",
-                            "dateCreated": "2024-12-04T14:26:53.030635Z",
-                            "dateExecuted": "1970-01-01T00:00:00Z",
+                            "id": "2",
+                            "user_id": "1",
+                            "date_created": "2024-12-22T11:56:35.387707Z",
+                            "date_executed": "1970-01-01T00:00:00Z",
                             "status": "ORDER_STATUS_PENDING",
-                            "nominal": "10.0",
-                            "price": "50.0",
+                            "nominal": "100.0",
+                            "price": "100000.0",
                             "type": "ORDER_TYPE_INSTANT",
-                            "side": "ORDER_SIDE_BUY",
-                            "cryptoWalletId": "3",
-                            "fiatWalletId": "5"
+                            "side": "ORDER_SIDE_SELL",
+                            "crypto_wallet_id": "1",
+                            "fiat_wallet_id": "9"
                         }
                     ]}
 
@@ -359,8 +360,6 @@ def get_orders(request: Request):
     try:
         response: order_pb2.OrderList = order_stub.GetOrderList(user_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -369,4 +368,4 @@ def get_orders(request: Request):
         raise HTTPException(status_code=204)
     else:
         logger.info("Orders found")
-        return MessageToDict(response)
+        return MessageToDict(response, preserving_proto_field_name=True)
