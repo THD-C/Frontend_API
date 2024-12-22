@@ -6,8 +6,9 @@ from src.connections import password_stub
 from password import password_pb2
 
 def hash_password(password):
-    ph = PasswordHasher()
-    return ph.hash(password)
+    # ph = PasswordHasher()
+    # return ph.hash(password)
+    return password
 
 def validate_password(password: str) -> bool:
     if len(password) < 12:
