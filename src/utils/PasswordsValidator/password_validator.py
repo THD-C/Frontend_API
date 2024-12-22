@@ -1,12 +1,13 @@
 from fastapi import HTTPException
-import hashlib
+from argon2 import PasswordHasher
 from grpc import RpcError
 from src.utils.logger import logger
 from src.connections import password_stub
 from password import password_pb2
 
 def hash_password(password):
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+    ph = PasswordHasher()
+    return ph.hash(password)
 
 def validate_password(password: str) -> bool:
     if len(password) < 12:
