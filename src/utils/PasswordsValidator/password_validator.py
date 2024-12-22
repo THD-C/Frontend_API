@@ -4,11 +4,13 @@ from grpc import RpcError
 from src.utils.logger import logger
 from src.connections import password_stub
 from password import password_pb2
+from src.utils.auth import JWT_SECRET_KEY
+
 
 def hash_password(password):
-    # ph = PasswordHasher()
-    # return ph.hash(password)
-    return password
+    ph = PasswordHasher()
+    return ph.hash(password, salt=bytes(JWT_SECRET_KEY, 'utf-8'))
+
 
 def validate_password(password: str) -> bool:
     if len(password) < 12:
