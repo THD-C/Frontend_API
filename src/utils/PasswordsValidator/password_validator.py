@@ -11,6 +11,7 @@ def hash_password(password):
     ph = PasswordHasher()
     return ph.hash(password, salt=bytes(JWT_SECRET_KEY, 'utf-8'))
 
+
 def validate_password(password: str) -> bool:
     if len(password) < 12:
         raise ValueError("password_length_too_short")
