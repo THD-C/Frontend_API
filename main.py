@@ -8,8 +8,8 @@ import uvicorn
 from src.router import access, wallets, user, order, payments
 from src.utils.logger import logger
 from src.utils.payment_scheduler import setup_payments_scheduler
-
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
 security = HTTPBearer()
 def custom_openapi():
@@ -48,6 +48,9 @@ def custom_openapi():
 
 app = FastAPI()
 FastAPIInstrumentor().instrument_app(app)
+app.add_middleware(OpenTelemetryMiddleware)
+
+app.openapi = custom_openapi
 
 app.openapi = custom_openapi
 

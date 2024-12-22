@@ -1,4 +1,4 @@
-name: Create Release
+name: Release Service
 
 on:
   push:
@@ -14,3 +14,5 @@ jobs:
   Release:
     uses: THD-C/GH_Actions/.github/workflows/release.yml@main
     secrets: inherit
+    with:
+      ServiceRepository: ${{ github.repository }}
