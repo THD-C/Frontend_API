@@ -14,6 +14,7 @@ from src.utils.logger import logger
 class WalletCreationData(BaseModel):
     id: str | None = ""
     currency: str
+    is_crypto: bool
     value: str | None = "0"
 
 
@@ -71,7 +72,8 @@ wallets = APIRouter(tags=["Wallets"])
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
@@ -85,7 +87,7 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    wallet_message = wallet_pb2.Wallet(**wallet_data.dict(), user_id=jwt_payload.get("id"))
+    wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"))
 
     try:
         response = wallet_stub.CreateWallet(wallet_message)
@@ -95,7 +97,7 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
 
     if response.id != "":
         logger.info("Creating wallet successfully performed")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
     logger.warning("Wallet creation failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -140,7 +142,8 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
@@ -165,7 +168,7 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
 
     if response.id != "":
         logger.info("Updated wallet")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
     logger.info("Failed to update wallet")
     raise HTTPException(status_code=400, detail="operation_failed")
 
@@ -214,13 +217,15 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
                             "id": "1",
                             "currency": "PLN",
                             "value": "250.32",
-                            "user_id": "2"
+                            "user_id": "2",
+                            "is_crypto": False
                         },
                         {
                             "id": "52",
                             "currency": "USD",
                             "value": "0.52",
-                            "user_id": "2"
+                            "user_id": "2",
+                            "is_crypto": False
                         }
                     ]
                 }
@@ -245,7 +250,7 @@ def get_wallets(request: Request):
         raise HTTPException(status_code=204)
     else:
         logger.info("Found wallets")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
 
 
 @wallets.get("/wallet", responses={
@@ -291,7 +296,8 @@ def get_wallets(request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
@@ -320,7 +326,7 @@ def get_wallet_by_id(wallet_id, request: Request):
         logger.warning("Unauthorized user tried to fetch wallet details")
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
     logger.info(f"Fetched wallet with id: {wallet_id}")
-    return MessageToDict(response, preserving_proto_field_name=True)
+    return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
 
 
 @wallets.delete("/", responses={
@@ -367,7 +373,8 @@ def get_wallet_by_id(wallet_id, request: Request):
                     "id": "1",
                     "currency": "PLN",
                     "value": "250.32",
-                    "user_id": "2"
+                    "user_id": "2",
+                    "is_crypto": False
                 }
             }
         }
@@ -394,4 +401,4 @@ def delete_wallet(wallet_id, request: Request):
         logger.warning(f"Deleting wallet failed")
         raise HTTPException(status_code=204)
     logger.info(f"Deleted wallet: {wallet_id}")
-    return MessageToDict(response, preserving_proto_field_name=True)
+    return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)

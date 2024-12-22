@@ -22,23 +22,21 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from order import order_status_pb2 as order_dot_order__status__pb2
-from order import order_type_pb2 as order_dot_order__type__pb2
-from order import order_side_pb2 as order_dot_order__side__pb2
-from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11\x63oins/coins.proto\x12\x05order\x1a\x18order/order_status.proto\x1a\x16order/order_type.proto\x1a\x16order/order_side.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x19\n\x06\x43oinId\x12\x0f\n\x07\x63oin_id\x18\x01 \x01(\t\".\n\x08\x43oinData\x12\x0f\n\x07\x63oin_id\x18\x01 \x01(\t\x12\x11\n\tcoin_data\x18\x02 \x01(\t26\n\x05\x43oins\x12-\n\x0bGetCoinData\x12\r.order.CoinId\x1a\x0f.order.CoinDatab\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11\x63oins/coins.proto\x12\x05\x63oins\"\"\n\x0f\x43oinDataRequest\x12\x0f\n\x07\x63oin_id\x18\x01 \x01(\t\"N\n\x15HistoricalDataRequest\x12\x0f\n\x07\x63oin_id\x18\x01 \x01(\t\x12\x12\n\nstart_date\x18\x02 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x03 \x01(\t\"C\n\x0c\x44\x61taResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x15\n\rerror_message\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\t2\x8b\x01\n\x05\x43oins\x12:\n\x0bGetCoinData\x12\x16.coins.CoinDataRequest\x1a\x13.coins.DataResponse\x12\x46\n\x11GetHistoricalData\x12\x1c.coins.HistoricalDataRequest\x1a\x13.coins.DataResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'coins.coins_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_COINID']._serialized_start=135
-  _globals['_COINID']._serialized_end=160
-  _globals['_COINDATA']._serialized_start=162
-  _globals['_COINDATA']._serialized_end=208
-  _globals['_COINS']._serialized_start=210
-  _globals['_COINS']._serialized_end=264
+  _globals['_COINDATAREQUEST']._serialized_start=28
+  _globals['_COINDATAREQUEST']._serialized_end=62
+  _globals['_HISTORICALDATAREQUEST']._serialized_start=64
+  _globals['_HISTORICALDATAREQUEST']._serialized_end=142
+  _globals['_DATARESPONSE']._serialized_start=144
+  _globals['_DATARESPONSE']._serialized_end=211
+  _globals['_COINS']._serialized_start=214
+  _globals['_COINS']._serialized_end=353
 # @@protoc_insertion_point(module_scope)

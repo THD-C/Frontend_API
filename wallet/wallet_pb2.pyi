@@ -6,16 +6,18 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Wallet(_message.Message):
-    __slots__ = ("id", "currency", "value", "user_id")
+    __slots__ = ("id", "currency", "value", "user_id", "is_crypto")
     ID_FIELD_NUMBER: _ClassVar[int]
     CURRENCY_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]
     USER_ID_FIELD_NUMBER: _ClassVar[int]
+    IS_CRYPTO_FIELD_NUMBER: _ClassVar[int]
     id: str
     currency: str
     value: str
     user_id: str
-    def __init__(self, id: _Optional[str] = ..., currency: _Optional[str] = ..., value: _Optional[str] = ..., user_id: _Optional[str] = ...) -> None: ...
+    is_crypto: bool
+    def __init__(self, id: _Optional[str] = ..., currency: _Optional[str] = ..., value: _Optional[str] = ..., user_id: _Optional[str] = ..., is_crypto: bool = ...) -> None: ...
 
 class WalletList(_message.Message):
     __slots__ = ("wallets",)

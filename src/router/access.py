@@ -81,7 +81,7 @@ access = APIRouter(tags=['Auth'])
 }, description="Authorize the user who has the account already created.")
 def login(credentials: Credentials):
     credentials.password = hash_password(credentials.password)
-    credentials = user_pb2.AuthUser(**credentials.dict())
+    credentials = user_pb2.AuthUser(**credentials.model_dump())
 
     try:
         response: user_pb2.AuthResponse = user_stub.Authenticate(credentials)
@@ -142,7 +142,7 @@ def register_user(registerData: RegisterData):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    data_for_grpc = user_pb2.RegUser(**registerData.dict())
+    data_for_grpc = user_pb2.RegUser(**registerData.model_dump())
 
     try:
         response: user_pb2.RegResponse = user_stub.Register(data_for_grpc)
@@ -156,7 +156,7 @@ def register_user(registerData: RegisterData):
 
     login_data = Credentials(login=registerData.email, password=no_hashed_password)
     login_response = login(login_data)
-    logger.info(f"Account created successfully. Permissions granted for user {login_response["username"]}")
+    logger.info(f"Account created successfully. Permissions granted for user {login_response['username']}")
     return login_response
 
 
