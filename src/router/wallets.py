@@ -150,7 +150,7 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     }
 }, description="Update of wallet. Fields id and value are obligatory.")
 def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
-    wallet_details = get_wallet_by_id(update_wallet_data.id, request)
+    get_wallet_by_id(update_wallet_data.id, request)
     wallet_value = float(update_wallet_data.value)
 
     if wallet_value < 0:
@@ -158,7 +158,7 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
 
     update_wallet_data.value = str(float(wallet_value) + float(update_wallet_data.value))
 
-    data_for_update = wallet_pb2.Wallet(**update_wallet_data.dict())
+    data_for_update = wallet_pb2.Wallet(**update_wallet_data.model_dump())
 
     try:
         response: wallet_pb2.Wallet = wallet_stub.UpdateWallet(data_for_update)
@@ -304,7 +304,7 @@ def get_wallets(request: Request):
     }
 }, description="Returns wallet details of specified id")
 def get_wallet_by_id(wallet_id, request: Request):
-    if type(wallet_id) == int or wallet_id is None or wallet_id <= 0:
+    if wallet_id is None or int(wallet_id) <= 0:
         raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
 
     auth_header = request.headers.get("Authorization")
@@ -381,7 +381,7 @@ def get_wallet_by_id(wallet_id, request: Request):
     }
 }, description="Deletes wallet of specified id")
 def delete_wallet(wallet_id, request: Request):
-    if type(wallet_id) != int or int(wallet_id) <= 0:
+    if int(wallet_id) <= 0:
         raise HTTPException(status_code=400, detail="wallet_id_incorrect_value")
 
     try:
