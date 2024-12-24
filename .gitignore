@@ -162,6 +162,18 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-#Logs
+# Logs
 ./app.log
 ./tests/app.log
+
+
+# Proto generated catalogs
+./coins
+./currency
+./order
+./password
+./payment
+./secret
+./transaction
+./user
+./wallet
