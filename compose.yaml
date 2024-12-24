@@ -13,6 +13,12 @@ services:
       - MONGO_MANAGER=THD_Mongo_Manager
     ports:
       - 8000:8000
+    healthcheck:
+      test: curl --fail http://THD_Frontend_API:8000/api/healthcheck
+      interval: 30s          
+      timeout: 5s            
+      retries: 3             
+      start_period: 5s  
     depends_on:
       DBManager:
         condition: service_started

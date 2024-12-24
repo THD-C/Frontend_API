@@ -5,11 +5,10 @@ from fastapi.openapi.models import SecurityScheme
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 
-from src.router import access, wallets, user, order, payments, currency
+from src.router import access, wallets, user, order, payments, currency, healthcheck
 from src.utils.logger import logger
 from src.utils.payment_scheduler import setup_payments_scheduler
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
 security = HTTPBearer()
 def custom_openapi():
@@ -48,9 +47,6 @@ def custom_openapi():
 
 app = FastAPI()
 FastAPIInstrumentor().instrument_app(app)
-# app.add_middleware(OpenTelemetryMiddleware)
-
-app.openapi = custom_openapi
 
 app.openapi = custom_openapi
 
@@ -75,6 +71,7 @@ app.include_router(user.user, prefix="/api/user")
 app.include_router(order.order, prefix="/api/order")
 app.include_router(payments.payments, prefix="/api/payments")
 app.include_router(currency.currency, prefix="/api/currency")
+app.include_router(healthcheck.health_check, prefix="/api/healthcheck")
 
 
 if __name__ == "__main__":
