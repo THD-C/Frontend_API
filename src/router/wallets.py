@@ -4,6 +4,7 @@ from grpc import RpcError
 from pydantic import BaseModel
 
 from src.connections import wallet_stub
+from src.router.currency import get_currency_type
 from user import user_detail_pb2
 from wallet import wallet_pb2
 from src.utils.auth import verify_user
@@ -14,7 +15,6 @@ from src.utils.logger import logger
 class WalletCreationData(BaseModel):
     id: str | None = ""
     currency: str
-    is_crypto: bool
     value: str | None = "0"
 
 
@@ -27,9 +27,15 @@ class WalletUpdateData(BaseModel):
 class WalletsOwnerData(BaseModel):
     id: str
 
+def is_crypto_func(currency_type):
+    if currency_type == "NOT_SUPPORTED":
+        return None
+    elif currency_type == "FIAT":
+        return False
+    else:
+        return True
 
 wallets = APIRouter(tags=["Wallets"])
-
 
 @wallets.post("/", responses={
     500: {
@@ -45,7 +51,8 @@ wallets = APIRouter(tags=["Wallets"])
         "content": {
             "application/json": {
                 "example": [{"detail": "operation_failed"},
-                            {"detail": "negative_value"}
+                            {"detail": "negative_value"},
+                            {"detail": "currency_type_not_supported"}
                             ]
             }
         }
@@ -87,7 +94,14 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"))
+    currency_type_info = get_currency_type(wallet_data.currency)
+    is_crypto = is_crypto_func(currency_type_info["currency_type"])
+
+    if is_crypto is None:
+        raise HTTPException(400, detail="currency_type_not_supported")
+
+
+    wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"), is_crypto=is_crypto)
 
     try:
         response = wallet_stub.CreateWallet(wallet_message)

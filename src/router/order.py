@@ -136,7 +136,7 @@ def create_order(orderDetails: OrderDetails, request: Request):
         logger.warning("Incorrect types provided")
         raise HTTPException(status_code=400, detail="operation_failed")
 
-    crypto_wallet_request_data = WalletCreationData(currency=orderDetails.currency_target, is_crypto=True)
+    crypto_wallet_request_data = WalletCreationData(currency=orderDetails.currency_target)
     try:
         wallet_creation_response = create_wallet(wallet_data=crypto_wallet_request_data,
                                                  request=request)
