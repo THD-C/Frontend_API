@@ -2,6 +2,8 @@ from google.protobuf.json_format import MessageToDict
 from fastapi import APIRouter, HTTPException, Request
 from grpc import RpcError
 from pydantic import BaseModel
+from enum import Enum
+from typing import Optional
 
 from src.connections import order_stub
 from order import order_pb2, order_type_pb2, order_status_pb2, order_side_pb2
@@ -11,14 +13,37 @@ from src.utils.auth import verify_user
 from src.utils.logger import logger
 
 
+class OrderType(str, Enum):
+    STOP_LOSS = "ORDER_TYPE_STOP_LOSS"
+    TAKE_PROFIT = "ORDER_TYPE_TAKE_PROFIT"
+    INSTANT = "ORDER_TYPE_INSTANT"
+    PENDING = "ORDER_TYPE_PENDING"
+
+
+class OrderSide(str, Enum):
+    BUY = "ORDER_SIDE_BUY"
+    SELL = "ORDER_SIDE_SELL"
+
+
+class OrderStatus(str, Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+    IN_PROGRESS = "IN_PROGRESS"
+
+
 class OrderDetails(BaseModel):
     currency_used_wallet_id: str  # Which currency is used i.e. BUY sth with USD, SELL BTC
     currency_target: str  # Which currency is the goal i.e. buy BTC, get USD from selling BTC
     nominal: str  # Number of units which are going to be used of currency_used_wallet_id
     cash_quantity: str | None = ""
     price: str  # Price on which user wants to perform an order
-    type: str
-    side: str
+    type: OrderType
+    side: OrderSide
 
 
 transaction_types_mapper = {
@@ -31,6 +56,17 @@ transaction_types_mapper = {
 transaction_side_mapper = {
     "ORDER_SIDE_BUY": order_side_pb2.ORDER_SIDE_BUY,
     "ORDER_SIDE_SELL": order_side_pb2.ORDER_SIDE_SELL
+}
+
+transaction_status_mapper = {
+    "PENDING": order_status_pb2.OrderStatus.ORDER_STATUS_PENDING,
+    "ACCEPTED": order_status_pb2.OrderStatus.ORDER_STATUS_ACCEPTED,
+    "REJECTED": order_status_pb2.OrderStatus.ORDER_STATUS_REJECTED,
+    "PARTIALLY_COMPLETED": order_status_pb2.OrderStatus.ORDER_STATUS_PARTIALLY_COMPLETED,
+    "COMPLETED": order_status_pb2.OrderStatus.ORDER_STATUS_COMPLETED,
+    "CANCELLED": order_status_pb2.OrderStatus.ORDER_STATUS_CANCELLED,
+    "EXPIRED": order_status_pb2.OrderStatus.ORDER_STATUS_EXPIRED,
+    "IN_PROGRESS": order_status_pb2.OrderStatus.ORDER_STATUS_IN_PROGRESS
 }
 
 order = APIRouter(tags=["Order"])
@@ -270,8 +306,6 @@ def delete_order(order_id, request: Request):
     try:
         response: order_pb2.OrderDetails = order_stub.DeleteOrder(delete_order_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
@@ -350,15 +384,33 @@ def delete_order(order_id, request: Request):
             }
         }
     }
-}, description='Returns all orders bonded with user')
-def get_orders(request: Request):
+}, description='Returns orders which fit given filters')
+def get_orders(request: Request,
+               wallet_id: Optional[str] = "",
+               order_status: Optional[OrderStatus] = None,
+               order_type: Optional[OrderType] = None,
+               side: Optional[OrderSide] = None):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    user_message = order_pb2.UserID(id=jwt_payload.get("id"))
+    if wallet_id != "" and int(wallet_id) < 1:
+        logger.warning("Incorrect value of wallet_id provided")
+        raise HTTPException(status_code=400, detail="wallet_id_invalid")
+
+    mapped_type = transaction_types_mapper[
+        order_type.value] if order_type is not None else order_type_pb2.ORDER_TYPE_UNDEFINED
+    mapped_side = transaction_side_mapper[side.value] if side is not None else order_side_pb2.ORDER_SIDE_UNDEFINED
+    mapped_order_status = transaction_status_mapper[
+        order_status.value] if order_status is not None else order_status_pb2.ORDER_STATUS_UNDEFINED
+
+    filter_message = order_pb2.OrderFilter(user_id=jwt_payload.get("id"),
+                                           wallet_id=wallet_id,
+                                           status=mapped_order_status,
+                                           side=mapped_side,
+                                           type=mapped_type)
 
     try:
-        response: order_pb2.OrderList = order_stub.GetOrderList(user_message)
+        response: order_pb2.OrderList = order_stub.GetOrders(filter_message)
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")

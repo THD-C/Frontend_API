@@ -48,7 +48,7 @@ def custom_openapi():
 
 app = FastAPI()
 FastAPIInstrumentor().instrument_app(app)
-app.add_middleware(OpenTelemetryMiddleware)
+# app.add_middleware(OpenTelemetryMiddleware)
 
 app.openapi = custom_openapi
 
