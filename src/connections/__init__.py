@@ -11,6 +11,7 @@ from order import order_pb2_grpc
 from payment import payment_pb2_grpc
 from secret import secret_pb2_grpc
 from password import password_pb2_grpc
+from currency import currency_pb2_grpc
 
 from src.utils.logger import logger
 
@@ -33,5 +34,6 @@ try:
     
     secret_stub = secret_pb2_grpc.SecretStoreStub(mongo_manager_channel)
     password_stub = password_pb2_grpc.PasswordCheckerStub(mongo_manager_channel)
+    currency_stub = currency_pb2_grpc.CurrencyStub(mongo_manager_channel)
 except grpc.RpcError as e:
     logger.error(f"Error occured when connecting to services: {e}")
