@@ -19,7 +19,65 @@ from src.utils.auth import verify_user
 crypto_router = APIRouter(tags=["Crypto data"])
 
 
-@crypto_router.get("/details")
+@crypto_router.get("/details", responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Invalid data passed to endpoint",
+        "content": {
+            "application/json": {
+                "example": {"detail": "invalid_data"}
+
+            }
+        }
+    },
+    401: {
+        "description": "Authorization failure",
+        "content": {
+            "application/json": {
+                "example": [{"detail": "no_authorization_header"},
+                            {"detail": "invalid_auth_scheme"},
+                            {"detail": "invalid_token"},
+                            {"detail": "expired_token"},
+                            {"detail": "unauthorized_user_for_method"}
+                            ]
+
+            }
+        }
+    },
+    200: {
+        "description": "Details of cryptocurrency in fiat currency specified in params",
+        "content": {
+            "application/json": {
+                "example": {
+                    "status": "success",
+                    "data": {
+                        "id": "bitcoin",
+                        "market_data": {
+                            "price_change_percentage_24h_in_currency": -3.806,
+                            "total_volume": 197255869075.0,
+                            "high_24h": 409703.0,
+                            "market_cap": 7735883719797.0,
+                            "current_price": 390614.0,
+                            "low_24h": 390175.0,
+                            "price_change_24h_in_currency": -15454.95814470714
+                        },
+                        "symbol": "btc",
+                        "name": "Bitcoin"
+                    },
+                    "error_message": "",
+                    "values_in_currency": "pln"
+                }
+            }
+        }
+    }
+}, description='Returns details of cryptocurrency in fiat currency specified in params')
 def get_crypto_details(
         request: Request,
         coin_id: str = Query(..., description="Name of crypto for which data will be received"),
@@ -64,7 +122,69 @@ def get_crypto_details(
                             detail="internal_server_error")
 
 
-@crypto_router.get("/historical-data")
+@crypto_router.get("/historical-data", responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Invalid data passed to endpoint",
+        "content": {
+            "application/json": {
+                "example": {"detail": "invalid_data"}
+
+            }
+        }
+    },
+    401: {
+        "description": "Authorization failure",
+        "content": {
+            "application/json": {
+                "example": [{"detail": "no_authorization_header"},
+                            {"detail": "invalid_auth_scheme"},
+                            {"detail": "invalid_token"},
+                            {"detail": "expired_token"},
+                            {"detail": "unauthorized_user_for_method"}
+                            ]
+
+            }
+        }
+    },
+    200: {
+        "description": "Historical data of cryptocurrency in fiat currency specified in params",
+        "content": {
+            "application/json": {
+                "example": {
+                    "status": "success",
+                    "data": {
+                        "timestamp": [
+                            1735162568042,
+                            1735162873987,
+                            1735163178020,
+                            1735244446553,
+                            1735244776319,
+                            1735245056234
+                        ],
+                        "price": [
+                            98379.61165801862,
+                            98458.46152136194,
+                            98342.98185484544,
+                            95435.01407619793,
+                            95358.78646932913,
+                            95472.464093301
+                        ]
+                    },
+                    "error_message": "",
+                    "values_in_currency": "usd"
+                }
+            }
+        }
+    }
+}, description='Returns historical data of cryptocurrency in fiat currency specified in params')
 def get_crypto_historical_data(
         request: Request,
         coin_id: str = Query(..., description="Name of crypto for which data will be received"),
