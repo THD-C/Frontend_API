@@ -5,7 +5,7 @@ from fastapi.openapi.models import SecurityScheme
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 
-from src.router import access, wallets, user, order, payments, currency, healthcheck
+from src.router import access, wallets, user, order, payments, currency, healthcheck, crypto_data
 from src.utils.logger import logger
 from src.utils.payment_scheduler import setup_payments_scheduler
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -25,7 +25,7 @@ def custom_openapi():
     if "components" not in openapi_schema:
         openapi_schema["components"] = {}
 
-        # Dodajemy security schemes do istniejących komponentów
+
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -72,6 +72,7 @@ app.include_router(order.order, prefix="/api/order")
 app.include_router(payments.payments, prefix="/api/payments")
 app.include_router(currency.currency, prefix="/api/currency")
 app.include_router(healthcheck.health_check, prefix="/api/healthcheck")
+app.include_router(crypto_data.crypto_router, prefix="/api/crypto")
 
 
 if __name__ == "__main__":
