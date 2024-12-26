@@ -11,20 +11,36 @@ services:
       - DB_MANAGER=THD_DB_Manager
       - MONGO_MANAGER_PORT=50051
       - MONGO_MANAGER=THD_Mongo_Manager
+      - PRICE_MANAGER=THD_Price_Manager
+      - PRICE_MANAGER_PORT=50051
     ports:
       - 8000:8000
     healthcheck:
       test: curl --fail http://THD_Frontend_API:8000/api/healthcheck
-      interval: 30s          
-      timeout: 5s            
-      retries: 3             
-      start_period: 5s  
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     depends_on:
       DBManager:
         condition: service_started
       Mongo_Manager:
         condition: service_started
 
+  Price-Manager:
+    build: https://github.com/THD-C/CoinGecko_API.git
+    image: thd/price_manager
+    container_name: THD_Price_Manager
+    hostname: THD_Price_Manager
+    restart: unless-stopped
+    ports:
+      - 50053:50051
+    environment:
+      - MONGO_MANAGER_PORT=50051
+      - MONGO_MANAGER=THD_Mongo_Manager
+    depends_on:
+      Mongo_Manager:
+        condition: service_started
 
   Postgres:
     build: https://github.com/THD-C/Postgres.git
