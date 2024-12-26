@@ -3,7 +3,7 @@ from csv import excel
 from google.protobuf.json_format import MessageToDict
 from fastapi import APIRouter, HTTPException, Request, Query
 from grpc import RpcError
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from enum import Enum
 
@@ -189,8 +189,8 @@ def get_crypto_historical_data(
         request: Request,
         coin_id: str = Query(..., description="Name of crypto for which data will be received"),
         currency: str = Query("usd", description="Currency code in which data will be received"),
-        start_date: datetime = Query(..., description="Start date for historical data"),
-        end_date: datetime = Query(datetime.today(), description="End date for historical data"),
+        start_date: datetime = Query(datetime.now()-timedelta(days=1), description="Start date for historical data"),
+        end_date: datetime = Query(datetime.now(), description="End date for historical data"),
 ):
     auth_header = request.headers.get("Authorization")
     verify_user(auth_header)
