@@ -189,7 +189,7 @@ def get_crypto_historical_data(
         request: Request,
         coin_id: str = Query(..., description="Name of crypto for which data will be received"),
         currency: str = Query("usd", description="Currency code in which data will be received"),
-        start_date: datetime = Query(datetime.now()-timedelta(days=1), description="Start date for historical data"),
+        start_date: datetime = Query(datetime.now() - timedelta(days=1), description="Start date for historical data"),
         end_date: datetime = Query(datetime.now(), description="End date for historical data"),
 ):
     auth_header = request.headers.get("Authorization")
@@ -235,3 +235,113 @@ def get_crypto_historical_data(
         logger.error("Coin details error: ", response.status, " with message: ", response.error_message)
         raise HTTPException(status_code=500,
                             detail="internal_server_error")
+
+
+@crypto_router.get("/coins", responses={
+    500: {
+        "description": "Problems occurred inside the server",
+        "content": {
+            "application/json": {
+                "example": {"detail": "internal_server_error"}
+            }
+        }
+    },
+    400: {
+        "description": "Invalid data passed to endpoint",
+        "content": {
+            "application/json": {
+                "example": {"detail": "invalid_data"}
+
+            }
+        }
+    },
+    401: {
+        "description": "Authorization failure",
+        "content": {
+            "application/json": {
+                "example": [{"detail": "no_authorization_header"},
+                            {"detail": "invalid_auth_scheme"},
+                            {"detail": "invalid_token"},
+                            {"detail": "expired_token"},
+                            {"detail": "unauthorized_user_for_method"}
+                            ]
+
+            }
+        }
+    },
+    200: {
+        "description": "List of crypto with most important details",
+        "content": {
+            "application/json": {
+                "example": {
+                    "coins": [
+                        {
+                            "ethereum": {
+                                "id": "ethereum",
+                                "market_data": {
+                                    "total_volume": 19154744209.0,
+                                    "price_change_percentage_24h_in_currency": -2.10623,
+                                    "high_24h": 3422.37,
+                                    "market_cap": 403511146186.0,
+                                    "current_price": 3348.83,
+                                    "low_24h": 3299.88,
+                                    "price_change_24h_in_currency": -72.05169091567541
+                                },
+                                "symbol": "eth",
+                                "name": "Ethereum"
+                            }
+                        },
+                        {
+                            "tether": {
+                                "id": "tether",
+                                "market_data": {
+                                    "total_volume": 61240126683.0,
+                                    "price_change_percentage_24h_in_currency": -0.06587,
+                                    "high_24h": 1.0,
+                                    "market_cap": 138775884877.0,
+                                    "current_price": 0.998231,
+                                    "low_24h": 0.993855,
+                                    "price_change_24h_in_currency": -0.000658007502949864
+                                },
+                                "symbol": "usdt",
+                                "name": "Tether"
+                            }
+                        }]
+                }
+            }
+        }
+    }
+}, description='Returns list of supported cryptocurrencies with most important details for display')
+def get_list_of_coins(request: Request,
+                      currency: str = Query('usd', description="Currency code in which data will be received")
+                      ):
+    auth_header = request.headers.get("Authorization")
+    verify_user(auth_header)
+
+    currency_type = get_currency_type(currency)
+    currency_type = currency_type["currency_type"]
+
+    if currency_type != "FIAT":
+        logger.error("Currency is not supported or cryptocurrency. List of coins must be in FIAT")
+        raise HTTPException(status_code=400,
+                            detail="invalid_data")
+
+    try:
+        coins_list_message: coins_pb2.ListDataForAllCoinsRequest = coins_pb2.ListDataForAllCoinsRequest(
+            fiat_currency=currency)
+
+        response: coins_pb2.ListDataForAllCoinsResponse = prices_stub.GetListDataForAllCoins(coins_list_message)
+    except RpcError as e:
+        logger.error("gRPC error details:", e)
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
+
+    if response.status == "success" and len(response.data) != 0:
+        logger.info("Fetched list of all available coins")
+        dict_data = MessageToDict(response,
+                             preserving_proto_field_name=True,
+                             always_print_fields_with_no_presence=True)
+        return {"coins": dict_data["data"]}
+    else:
+        logger.warning("No coins available - consider error in communication")
+        raise HTTPException(status_code=204)
