@@ -11,6 +11,7 @@ from src.router.wallets import create_wallet, WalletCreationData
 from src.utils.auth import verify_user
 
 from src.utils.logger import logger
+from user import user_type_pb2
 
 
 class OrderType(str, Enum):
@@ -239,7 +240,8 @@ def get_order(order_id, request: Request):
         logger.info("No order found")
         raise HTTPException(status_code=204)
     else:
-        if str(jwt_payload.get("id")) != response.user_id:
+        if str(jwt_payload.get("id")) != response.user_id and jwt_payload.get(
+                "user_type") < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
             logger.warning("Unauthorized user tried to fetch data")
             raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
         logger.info("Fetched order")
@@ -297,7 +299,7 @@ def get_order(order_id, request: Request):
             }
         }
     }
-}, description='Creates an order for specifiec currency')
+}, description='Deletes an order of specified currency')
 def delete_order(order_id, request: Request):
     get_order(order_id, request=request)
 
@@ -386,12 +388,21 @@ def delete_order(order_id, request: Request):
     }
 }, description='Returns orders which fit given filters')
 def get_orders(request: Request,
+               user_id: Optional[str] = None,
                wallet_id: Optional[str] = "",
                order_status: Optional[OrderStatus] = None,
                order_type: Optional[OrderType] = None,
                side: Optional[OrderSide] = None):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
+
+    if user_id is None or jwt_payload.get("id") == user_id:
+        selected_user_id = jwt_payload.get("id")
+    elif jwt_payload.get("user_type") >= user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        selected_user_id = user_id
+    else:
+        logger.warning("Unauthorized user tried to fetch list of wallets")
+        raise HTTPException(401, detail="unauthorized_user_for_method")
 
     if wallet_id != "" and int(wallet_id) < 1:
         logger.warning("Incorrect value of wallet_id provided")
@@ -403,7 +414,7 @@ def get_orders(request: Request,
     mapped_order_status = transaction_status_mapper[
         order_status.value] if order_status is not None else order_status_pb2.ORDER_STATUS_UNDEFINED
 
-    filter_message = order_pb2.OrderFilter(user_id=jwt_payload.get("id"),
+    filter_message = order_pb2.OrderFilter(user_id=selected_user_id,
                                            wallet_id=wallet_id,
                                            status=mapped_order_status,
                                            side=mapped_side,
