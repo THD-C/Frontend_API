@@ -158,7 +158,7 @@ def get_crypto_details(
         "description": "Historical data of cryptocurrency in fiat currency specified in params",
         "content": {
             "application/json": {
-                "example": {
+                "example": [{
                     "status": "success",
                     "data": {
                         "timestamp": [
@@ -180,7 +180,45 @@ def get_crypto_details(
                     },
                     "error_message": "",
                     "values_in_currency": "usd"
-                }
+                },
+                    {
+                        "status": "success",
+                        "data": {
+                            "close": [
+                                93734,
+                                93788,
+                                93820,
+                                93937
+                            ],
+                            "low": [
+                                93734,
+                                93788,
+                                93820,
+                                93637
+                            ],
+                            "open": [
+                                94011,
+                                93810,
+                                93822,
+                                93834
+                            ],
+                            "high": [
+                                94215,
+                                94054,
+                                94145,
+                                93937
+                            ],
+                            "timestamp": [
+                                1735669800000,
+                                1735671600000,
+                                1735673400000,
+                                1735675200000
+                            ]
+                        },
+                        "error_message": "",
+                        "values_in_currency": "usd"
+                    }
+                ]
             }
         }
     }
@@ -191,6 +229,7 @@ def get_crypto_historical_data(
         currency: str = Query("usd", description="Currency code in which data will be received"),
         start_date: datetime = Query(datetime.now() - timedelta(days=1), description="Start date for historical data"),
         end_date: datetime = Query(datetime.now(), description="End date for historical data"),
+        ohlc_data: bool = Query(False, description="Specifies if data should be in OHLC format"),
 ):
     auth_header = request.headers.get("Authorization")
     verify_user(auth_header)
@@ -213,12 +252,16 @@ def get_crypto_historical_data(
         raise HTTPException(status_code=400,
                             detail="invalid_data")
 
+    coin_details_message: coins_pb2.HistoricalDataRequest = coins_pb2.HistoricalDataRequest(coin_id=coin_id,
+                                                                                            fiat_currency=currency,
+                                                                                            start_date=start_date,
+                                                                                            end_date=end_date)
+
     try:
-        coin_details_message: coins_pb2.HistoricalDataRequest = coins_pb2.HistoricalDataRequest(coin_id=coin_id,
-                                                                                                fiat_currency=currency,
-                                                                                                start_date=start_date,
-                                                                                                end_date=end_date)
-        response: coins_pb2.DataResponse = prices_stub.GetHistoricalData(coin_details_message)
+        if ohlc_data:
+            response: coins_pb2.DataResponse = prices_stub.GetHistoricalCandleData(coin_details_message)
+        else:
+            response: coins_pb2.DataResponse = prices_stub.GetHistoricalData(coin_details_message)
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500,
@@ -339,8 +382,8 @@ def get_list_of_coins(request: Request,
     if response.status == "success" and len(response.data) != 0:
         logger.info("Fetched list of all available coins")
         dict_data = MessageToDict(response,
-                             preserving_proto_field_name=True,
-                             always_print_fields_with_no_presence=True)
+                                  preserving_proto_field_name=True,
+                                  always_print_fields_with_no_presence=True)
         return {"coins": dict_data["data"]}
     else:
         logger.warning("No coins available - consider error in communication")
