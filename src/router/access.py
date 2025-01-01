@@ -90,7 +90,11 @@ def login(credentials: Credentials):
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success:
-        jwt_data = {"id": response.id, "email": response.email, "login": response.username}
+        jwt_data = {"id": response.id,
+                    "email": response.email,
+                    "login": response.username,
+                    "user_type": response.user_type
+                    }
         jwt_token = create_jwt_token(jwt_data)
 
         endpoint_response = {"accessToken": jwt_token,

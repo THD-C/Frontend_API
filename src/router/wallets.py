@@ -1,11 +1,11 @@
 from google.protobuf.json_format import MessageToDict
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
 from grpc import RpcError
 from pydantic import BaseModel
 
 from src.connections import wallet_stub
 from src.router.currency import get_currency_type
-from user import user_detail_pb2
+from user import user_type_pb2
 from wallet import wallet_pb2
 from src.utils.auth import verify_user
 
@@ -27,6 +27,7 @@ class WalletUpdateData(BaseModel):
 class WalletsOwnerData(BaseModel):
     id: str
 
+
 def is_crypto_func(currency_type):
     if currency_type == "NOT_SUPPORTED":
         return None
@@ -35,7 +36,9 @@ def is_crypto_func(currency_type):
     else:
         return True
 
+
 wallets = APIRouter(tags=["Wallets"])
+
 
 @wallets.post("/", responses={
     500: {
@@ -99,7 +102,6 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
 
     if is_crypto is None:
         raise HTTPException(400, detail="currency_type_not_supported")
-
 
     wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"), is_crypto=is_crypto)
 
@@ -212,7 +214,7 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
                             {"detail": "invalid_auth_scheme"},
                             {"detail": "invalid_token"},
                             {"detail": "expired_token"},
-                            {"detail": "unathorized_user_for_method"}
+                            {"detail": "unauthorized_user_for_method"}
                             ]
 
             }
@@ -246,12 +248,19 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
             }
         }
     }
-}, description="Returns a list of all wallets for user")
-def get_wallets(request: Request):
+}, description="Returns a list of all wallets which belong to user")
+def get_wallets(request: Request,
+                user_id: str = Query(None, description="ID of the user")):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    user_data = user_detail_pb2.UserDetail(id=jwt_payload.get("id"))
+    if user_id is None or jwt_payload.get("id") == user_id:
+        user_data = wallet_pb2.UserID(id=jwt_payload.get("id"))
+    elif jwt_payload.get("user_type") >= user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        user_data = wallet_pb2.UserID(id=user_id)
+    else:
+        logger.warning("Unauthorized user tried to fetch list of wallets")
+        raise HTTPException(401, detail="unauthorized_user_for_method")
 
     try:
         response: wallet_pb2.WalletList = wallet_stub.GetUsersWallets(user_data)
@@ -336,7 +345,8 @@ def get_wallet_by_id(wallet_id, request: Request):
         logger.info("No wallet with given id")
         raise HTTPException(status_code=204)
 
-    if str(jwt_payload.get("id")) != response.user_id:
+    if str(jwt_payload.get("id")) != response.user_id and jwt_payload.get(
+            "user_type") < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
         logger.warning("Unauthorized user tried to fetch wallet details")
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
     logger.info(f"Fetched wallet with id: {wallet_id}")

@@ -1,6 +1,6 @@
 from google.protobuf.json_format import MessageToDict
 from urllib.parse import urlparse
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
 from grpc import RpcError
 from pydantic import BaseModel
 import stripe
@@ -12,9 +12,9 @@ from src.utils.auth import verify_user
 
 from src.utils.logger import logger
 from src.utils.payment_scheduler import get_session_status
+from user import user_type_pb2
 
 SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'PLN']
-
 
 try:
     message = secret_pb2.SecretName(name="STRIPE_SECRET_KEY")
@@ -72,12 +72,12 @@ payments = APIRouter(tags=["Payments"])
                 "example": [
                     {"session_url": "string i.e. https://stripe.com/payment/dsgq35211gs2",
                      "payment_details": {
-                            "id": "dsgq35211gs2",
-                            "currency": "PLN",
-                            "value": "250.32",
-                            "user_id": "2",
-                            "state": "PAYMENT_STATE_PENDING"
-                        }
+                         "id": "dsgq35211gs2",
+                         "currency": "PLN",
+                         "value": "250.32",
+                         "user_id": "2",
+                         "state": "PAYMENT_STATE_PENDING"
+                     }
                      }
                 ]
             }
@@ -211,7 +211,8 @@ def get_payment_details(payment_id, request: Request):
         logger.info("No payment with given id")
         raise HTTPException(status_code=204)
 
-    if str(jwt_payload.get("id")) != payment_details_response.user_id:
+    if str(jwt_payload.get("id")) != payment_details_response.user_id and jwt_payload.get(
+            "user_type") < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
         logger.warning("Unauthorized user tried to fetch wallet details")
         raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
 
@@ -279,11 +280,18 @@ def get_payment_details(payment_id, request: Request):
         }
     }
 }, description="Returns a list of all payments for user")
-def get_users_payments(request: Request):
+def get_users_payments(request: Request,
+                       user_id: str = Query(None, description="ID of the user")):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    user_data = payment_pb2.UserID(user_id=jwt_payload.get("id"))
+    if user_id is None or jwt_payload.get("id") == user_id:
+        user_data = payment_pb2.UserID(user_id=jwt_payload.get("id"))
+    elif jwt_payload.get("user_type") >= user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        user_data = payment_pb2.UserID(user_id=user_id)
+    else:
+        logger.warning("Unauthorized user tried to fetch list of wallets")
+        raise HTTPException(401, detail="unauthorized_user_for_method")
 
     try:
         response: payment_pb2.PaymentList = payment_stub.GetPayments(user_data)
@@ -292,10 +300,10 @@ def get_users_payments(request: Request):
         raise HTTPException(500, "internal_server_error")
 
     if len(response.payments) == 0:
-        logger.info("No wallets found")
+        logger.info("No payments found")
         raise HTTPException(status_code=204)
     else:
-        logger.info("Found wallets")
+        logger.info("Found payments")
         return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -343,7 +351,7 @@ def get_users_payments(request: Request):
 def cancel_payment(payment_id, request: Request):
     payment_status, session_status = get_session_status(payment_id)
 
-    if session_status=="open":
+    if session_status == "open":
         try:
             stripe.checkout.Session.expire(payment_id)
             update_message: payment_pb2.PaymentDetails = payment_pb2.PaymentDetails(id=payment_id,
