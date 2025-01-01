@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from src.connections import user_stub
 from src.utils.auth import verify_user
-from user import user_pb2
+from user import user_pb2, user_type_pb2
 
 from src.utils.logger import logger
 
@@ -82,21 +82,22 @@ def get_user_details(request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    user_message = user_pb2.ReqGetUserDetails(id=jwt_payload.get("id"), )
+    user_message = user_pb2.ReqGetUserDetails(id=jwt_payload.get("id"))
     try:
         response: user_pb2.UserDetails = user_stub.GetUserDetails(user_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
-        raise HTTPException(status_code=500, detail="internal_server_error")
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
 
     if response.username == "":
         logger.warning("No user found")
         raise HTTPException(status_code=204)
     else:
         logger.info("User's details found")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response,
+                             preserving_proto_field_name=True,
+                             always_print_fields_with_no_presence=True)
 
 
 @user.put("/", responses={
@@ -155,21 +156,24 @@ def update_user_details(update_data: UpdateUserData, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    user_message = user_pb2.ReqUpdateUser(**update_data.dict(), id=jwt_payload.get("id"))
+    user_message = user_pb2.ReqUpdateUser(**update_data.model_dump(),
+                                          id=jwt_payload.get("id"))
     try:
         response: user_pb2.ResultResponse = user_stub.Update(user_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
-        raise HTTPException(status_code=500, detail="internal_server_error")
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
 
     if response.success is False:
         logger.warning("Updating user details failed")
-        raise HTTPException(status_code=400, detail="operation_failed")
+        raise HTTPException(status_code=400,
+                            detail="operation_failed")
     else:
         logger.info("Updating user details completed")
-        return MessageToDict(user_message, preserving_proto_field_name=True)
+        return MessageToDict(user_message,
+                             preserving_proto_field_name=True,
+                             always_print_fields_with_no_presence=True)
 
 
 @user.put("/update-password",responses={
@@ -218,22 +222,25 @@ def update_password(updatePassword: UpdatePassword, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    password_message: user_pb2.ChangePass = user_pb2.ChangePass(**updatePassword.dict(), login=jwt_payload.get("email"))
+    password_message: user_pb2.ChangePass = user_pb2.ChangePass(**updatePassword.model_dump(),
+                                                                login=jwt_payload.get("email"))
 
     try:
         response: user_pb2.ResultResponse = user_stub.ChangePassword(password_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
-        raise HTTPException(status_code=500, detail="internal_server_error")
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
 
     if response.success is False:
         logger.info("User passed wrong old password")
-        raise HTTPException(status_code=400, detail="invalid_old_password")
+        raise HTTPException(status_code=400,
+                            detail="invalid_old_password")
 
     logger.info("Changing password completed")
-    return MessageToDict(response, preserving_proto_field_name=True)
+    return MessageToDict(response,
+                         preserving_proto_field_name=True,
+                         always_print_fields_with_no_presence=True)
 
 
 @user.delete("/", responses={
@@ -281,18 +288,45 @@ def delete_user(userDelete: DeleteUser, request: Request):
     if userDelete.mail == "":
         userDelete.mail = jwt_payload.get("email")
 
-    user_message = user_pb2.ReqDeleteUser(**userDelete.dict(), id=jwt_payload.get("id"))
+    user_message = user_pb2.ReqDeleteUser(**userDelete.model_dump(),
+                                          id=jwt_payload.get("id"))
     try:
         response: user_pb2.ResultResponse = user_stub.Delete(user_message)
     except RpcError as e:
-        print("gRPC error details:", e.details())
-        print("gRPC status code:", e.code())
         logger.error("gRPC error details:", e)
-        raise HTTPException(status_code=500, detail="internal_server_error")
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
 
     if response.success is False:
         logger.warning("Deleting user failed")
-        raise HTTPException(status_code=400, detail="operation_failed")
+        raise HTTPException(status_code=400,
+                            detail="operation_failed")
     else:
         logger.info("User deleted")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response,
+                             preserving_proto_field_name=True)
+
+@user.get("/list-users")
+def list_users(request: Request):
+    auth_header = request.headers.get("Authorization")
+    jwt_payload = verify_user(auth_header)
+
+    if jwt_payload['user_type'] < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        logger.warning("Unauthorized user tried to fetch list of wallets")
+        raise HTTPException(401,
+                            detail="unauthorized_user_for_method")
+
+    try:
+        response: user_pb2.UsersList = user_stub.GetAllUsers(user_pb2.AllUsersRequest())
+    except RpcError as e:
+        logger.error("gRPC error details:", e)
+        raise HTTPException(status_code=500,
+                            detail="internal_server_error")
+
+    if len(response.user_data) == 0:
+        logger.info("No users found")
+        raise HTTPException(status_code=204)
+    else:
+        return MessageToDict(response,
+                             preserving_proto_field_name=True,
+                             always_print_fields_with_no_presence=True)
