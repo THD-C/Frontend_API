@@ -5,7 +5,7 @@ from fastapi.openapi.models import SecurityScheme
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 
-from src.router import access, wallets, user, order, payments, currency, healthcheck, crypto_data
+from src.router import access, wallets, user, order, payments, currency, healthcheck, crypto_data, blog
 from src.utils.logger import logger
 from src.utils.payment_scheduler import setup_payments_scheduler
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -73,6 +73,7 @@ app.include_router(payments.payments, prefix="/api/payments")
 app.include_router(currency.currency, prefix="/api/currency")
 app.include_router(healthcheck.health_check, prefix="/api/healthcheck")
 app.include_router(crypto_data.crypto_router, prefix="/api/crypto")
+app.include_router(blog.blog_router, prefix="/api/blog")
 
 
 if __name__ == "__main__":
