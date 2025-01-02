@@ -296,15 +296,17 @@ def update_password(updatePassword: UpdatePassword, request: Request):
     },
     description="Deletes user",
 )
-def delete_user(userDelete: DeleteUser, request: Request):
+def delete_user(request: Request,
+        user_id: int = Query(..., description="ID of the user to delete"),):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-
-    if userDelete.mail == "":
-        userDelete.mail = jwt_payload.get("email")
+    
+    '''
+        Write validation if user who request to delete user is super admin
+    '''
 
     user_message = user_pb2.ReqDeleteUser(
-        **userDelete.model_dump(), id=jwt_payload.get("id")
+        id=user_id
     )
     try:
         response: user_pb2.ResultResponse = user_stub.Delete(user_message)
