@@ -10,6 +10,7 @@ from src.utils.auth import verify_user
 from user import user_pb2, user_type_pb2
 
 from src.utils.logger import logger
+from src.utils.PasswordsValidator.password_validator import hash_password
 
 user = APIRouter(tags=["User"])
 
@@ -240,8 +241,8 @@ def update_password(updatePassword: UpdatePassword, request: Request):
 
     password_message: user_pb2.ChangePass = user_pb2.ChangePass(
         login=jwt_payload.get("email"),
-        old_password=updatePassword.old_password,
-        new_password=updatePassword.new_password,
+        old_password=hash_password(updatePassword.old_password),
+        new_password=hash_password(updatePassword.new_password),
     )
 
     try:
