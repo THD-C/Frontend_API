@@ -306,7 +306,7 @@ def delete_user(request: Request,
     '''
 
     user_message = user_pb2.ReqDeleteUser(
-        id=user_id
+        id=str(user_id)
     )
     try:
         response: user_pb2.ResultResponse = user_stub.Delete(user_message)
