@@ -225,9 +225,6 @@ def get_order(order_id, request: Request):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
 
-    if int(order_id) < 1 or type(order_id) != int:
-        raise HTTPException(status_code=400, detail="invalid_order_id")
-
     order_message = order_pb2.OrderID(id=order_id)
 
     try:
