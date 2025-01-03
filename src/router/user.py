@@ -297,17 +297,30 @@ def update_password(updatePassword: UpdatePassword, request: Request):
     description="Deletes user",
 )
 def delete_user(request: Request,
-        user_id: int = Query(..., description="ID of the user to delete"),):
+                user_id: str | None = Query("", description="ID of the user to delete"), ):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
-    
-    '''
-        Write validation if user who request to delete user is super admin
-    '''
 
-    user_message = user_pb2.ReqDeleteUser(
-        id=str(user_id)
-    )
+    if (user_id == "" or user_id == jwt_payload["id"]) and jwt_payload['user_type'] < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        user_message: user_pb2.ReqDeleteUser() = user_pb2.ReqDeleteUser(
+            id=jwt_payload["id"]
+        )
+
+    elif ((user_id == "" or user_id == jwt_payload["id"]) and
+            jwt_payload["user_type"] >= user_type_pb2.USER_TYPE_SUPER_ADMIN_USER):
+        logger.warning("User with admin privileges tried to delete self account")
+        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
+
+    elif user_id != jwt_payload["id"] and jwt_payload["user_type"] >= user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        user_message: user_pb2.ReqDeleteUser() = user_pb2.ReqDeleteUser(
+            id=user_id
+        )
+
+    elif user_id != jwt_payload["id"] and jwt_payload["user_type"] < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
+        logger.warning(f"User with id : {jwt_payload['id']} tried to delete account of other user with id: {user_id}")
+        raise HTTPException(status_code=401, detail="unauthorized_user_for_method")
+
+
     try:
         response: user_pb2.ResultResponse = user_stub.Delete(user_message)
     except RpcError as e:
@@ -318,7 +331,7 @@ def delete_user(request: Request,
         logger.warning("Deleting user failed")
         raise HTTPException(status_code=400, detail="operation_failed")
     else:
-        logger.info("User deleted")
+        logger.info(f"User with id {user_id if user_id != "" else jwt_payload["id"]} deleted successfully")
         return MessageToDict(response, preserving_proto_field_name=True)
 
 
@@ -425,9 +438,9 @@ def list_users(request: Request):
     description="Provides managing users' types for administrative purposes. User type can be change only by administrator user.",
 )
 def change_user_type(
-    request: Request,
-    new_user_type: UserType,
-    user_id: str = Query(description="User ID whose type will be changed."),
+        request: Request,
+        new_user_type: UserType,
+        user_id: str = Query(description="User ID whose type will be changed."),
 ):
     auth_header = request.headers.get("Authorization")
     jwt_payload = verify_user(auth_header)
