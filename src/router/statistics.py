@@ -13,7 +13,73 @@ from src.utils.logger import logger
 statistics_router = APIRouter(tags=["Statistics"])
 
 
-@statistics_router.get("/portfolio-diversity")
+@statistics_router.get("/portfolio-diversity",
+                       responses={
+                           500: {
+                               "description": "Problems occurred inside the server",
+                               "content": {
+                                   "application/json": {
+                                       "example": {"detail": "internal_server_error"}
+                                   }
+                               }
+                           },
+                           400: {
+                               "description": "Operation failure",
+                               "content": {
+                                   "application/json": {
+                                       "example": {"detail": "operation_failed"}
+                                   }
+                               }
+                           },
+                           401: {
+                               "description": "Authorization failure",
+                               "content": {
+                                   "application/json": {
+                                       "example": [{"detail": "no_authorization_header"},
+                                                   {"detail": "invalid_auth_scheme"},
+                                                   {"detail": "invalid_token"},
+                                                   {"detail": "expired_token"},
+                                                   {"detail": "unauthorized_user_for_method"}
+                                                   ]
+
+                                   }
+                               }
+                           },
+                           204: {
+                               "description": "User have no wallets"
+                           },
+                           200: {
+                               "description": "List containing share of cryptocurrencies in portfolio",
+                               "content": {
+                                   "application/json": {
+                                       "example": {
+                                           "calculation_fiat_currency": "usd",
+                                           "crypto_wallets_statistics": [
+                                               {
+                                                   "cryptocurrency": "BITCOIN",
+                                                   "fiat_value": 4898400,
+                                                   "current_price": 97968,
+                                                   "share_in_portfolio": 96.43
+                                               },
+                                               {
+                                                   "cryptocurrency": "ETHEREUM",
+                                                   "fiat_value": 181562,
+                                                   "current_price": 3631.24,
+                                                   "share_in_portfolio": 3.57
+                                               },
+                                               {
+                                                   "cryptocurrency": "RIPPLE",
+                                                   "fiat_value": 23.799999999999997,
+                                                   "current_price": 2.38,
+                                                   "share_in_portfolio": 0
+                                               }
+                                           ]
+                                       }
+                                   }
+                               }
+                           }
+                       },
+                       description="Returns a list containing share of cryptocurrencies in portfolio")
 async def get_portfolio_diversity(request: Request,
                                   user_id: str = Query(None,
                                                        description="User ID"),
@@ -46,19 +112,77 @@ async def get_portfolio_diversity(request: Request,
         current_price = float(coins_prices[crypto_wallet['currency'].lower()][currency])
         crypto_value = float(crypto_wallet['value']) * current_price
         sum_value += crypto_value
-        response["crypto_wallets_stats"].append({
+        response["crypto_wallets_statistics"].append({
             "cryptocurrency": crypto_wallet['currency'],
             "fiat_value": crypto_value,
             "current_price": current_price,
         })
-    for wallet in response["crypto_wallets_stats"]:
+    for wallet in response["crypto_wallets_statistics"]:
         wallet["share_in_portfolio"] = round(wallet["fiat_value"] / sum_value * 100, 2)
 
     return response
 
 
-@statistics_router.get("/orders-statistics")
-async def get_orders_statistics(request: Request,
+@statistics_router.get("/crypto-estimation",
+                       responses={
+                           500: {
+                               "description": "Problems occurred inside the server",
+                               "content": {
+                                   "application/json": {
+                                       "example": {"detail": "internal_server_error"}
+                                   }
+                               }
+                           },
+                           400: {
+                               "description": "Operation failure",
+                               "content": {
+                                   "application/json": {
+                                       "example": {"detail": "operation_failed"}
+                                   }
+                               }
+                           },
+                           401: {
+                               "description": "Authorization failure",
+                               "content": {
+                                   "application/json": {
+                                       "example": [{"detail": "no_authorization_header"},
+                                                   {"detail": "invalid_auth_scheme"},
+                                                   {"detail": "invalid_token"},
+                                                   {"detail": "expired_token"},
+                                                   {"detail": "unauthorized_user_for_method"}
+                                                   ]
+
+                                   }
+                               }
+                           },
+                           204: {
+                               "description": "User have no wallets"
+                           },
+                           200: {
+                               "description": "List containing cryptocurrencies value estimation in portfolio",
+                               "content": {
+                                   "application/json": {
+                                       "example": {
+                                           "calculation_fiat_currency": "usd",
+                                           "estimations": [
+                                               {
+                                                   "cryptocurrency": "BITCOIN",
+                                                   "amount": "50.0",
+                                                   "estimated_fiat_value": 4892200
+                                               },
+                                               {
+                                                   "cryptocurrency": "ETHEREUM",
+                                                   "amount": "50.0",
+                                                   "estimated_fiat_value": 181150
+                                               }
+                                           ]
+                                       }
+                                   }
+                               }
+                           }
+                       },
+                       description="Returns a list containing estimated value of cryptocurrencies in portfolio")
+async def get_crypto_estimation(request: Request,
                                 user_id: str = Query(None,
                                                      description="User ID"),
                                 currency: str = Query("usd",
