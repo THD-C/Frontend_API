@@ -100,7 +100,7 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     currency_type_info = get_currency_type(wallet_data.currency)
     is_crypto = is_crypto_func(currency_type_info["currency_type"])
 
-    if is_crypto and wallet_value > 0:
+    if (is_crypto and wallet_value > 0) and jwt_payload["user_type"] < user_type_pb2.USER_TYPE_SUPER_ADMIN_USER:
         logger.warning("User tried to create crypto wallet with value > 0")
         raise HTTPException(400, detail = "operation_failed")
 
