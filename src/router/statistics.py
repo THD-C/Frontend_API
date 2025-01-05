@@ -6,7 +6,7 @@ from src.connections import prices_stub
 from coins import coins_pb2
 
 from src.utils.auth import verify_user
-from src.router.wallets import get_wallets
+from src.router.wallets import get_wallets, get_wallet_by_id
 
 from src.utils.logger import logger
 
@@ -56,3 +56,49 @@ async def get_portfolio_diversity(request: Request,
 
     return response
 
+
+@statistics_router.get("/orders-statistics")
+async def get_orders_statistics(request: Request,
+                                user_id: str = Query(None,
+                                                     description="User ID"),
+                                currency: str = Query("usd",
+                                                      description="Currency in which prices will be calculated"),
+                                wallet_id: str = Query(None,
+                                                       description="Crypto currency wallet for which prices will be calculated")):
+    auth_header = request.headers.get("Authorization")
+    jwt_payload = verify_user(auth_header)
+
+    try:
+        coins_prices: coins_pb2.DataResponse = prices_stub.GetAllCoinsPrices(coins_pb2.AllCoinsPricesRequest())
+    except RpcError as e:
+        logger.error("gRPC error details:", e)
+        raise HTTPException(status_code=500, detail="internal_server_error")
+    coins_prices = coins_prices.data
+
+    response = {
+        "calculation_fiat_currency": currency,
+        "estimations": []
+    }
+
+    if wallet_id is None:
+        list_of_wallets = get_wallets(request, user_id if user_id is not None else jwt_payload["id"])
+        list_of_wallets = list_of_wallets
+
+        for wallet in list_of_wallets["wallets"]:
+            response['estimations'].append({
+                "cryptocurrency": wallet['currency'],
+                "amount": wallet['value'],
+                "estimated_fiat_value": float(wallet['value']) * float(
+                    coins_prices[wallet['currency'].lower()][currency])
+            })
+
+        return response
+    else:
+        wallet_details = get_wallet_by_id(wallet_id, request)
+        response["estimations"].append({
+            "cryptocurrency": wallet_details['currency'],
+            "amount": wallet_details['value'],
+            "estimated_fiat_value": float(wallet_details['value']) * float(
+                coins_prices[wallet_details['currency'].lower()][currency])
+        })
+        return response
