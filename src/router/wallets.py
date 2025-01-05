@@ -100,6 +100,10 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     currency_type_info = get_currency_type(wallet_data.currency)
     is_crypto = is_crypto_func(currency_type_info["currency_type"])
 
+    if is_crypto and wallet_value > 0:
+        logger.warning("User tried to create crypto wallet with value > 0")
+        raise HTTPException(400, detail = "operation_failed")
+
     if is_crypto is None:
         raise HTTPException(400, detail="currency_type_not_supported")
 
