@@ -117,6 +117,10 @@ async def get_portfolio_diversity(
                 "current_price": current_price,
             }
         )
+        
+    if sum_value == 0:
+        sum_value = 1
+      
     for wallet in response["crypto_wallets_statistics"]:
         wallet["share_in_portfolio"] = round(wallet["fiat_value"] / sum_value * 100, 2)
 
