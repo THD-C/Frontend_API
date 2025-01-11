@@ -41,7 +41,7 @@ class OrderDetails(BaseModel):
     currency_used_wallet_id: str  # Which currency is used i.e. BUY sth with USD, SELL BTC
     currency_target: str  # Which currency is the goal i.e. buy BTC, get USD from selling BTC
     nominal: str  # Number of units which are going to be used of currency_used_wallet_id
-    cash_quantity: str | None = ""
+    cash_quantity: str | None = "0"
     price: str  # Price on which user wants to perform an order
     type: OrderType
     side: OrderSide
@@ -150,7 +150,7 @@ def create_order(orderDetails: OrderDetails, request: Request):
                                           fiat_wallet_id=orderDetails.currency_used_wallet_id,
                                           crypto_wallet_id=wallet_creation_response.get("id"),
                                           nominal=orderDetails.nominal,
-                                          cash_quantity=orderDetails.cash_quantity,
+                                          cash_quantity=orderDetails.cash_quantity if orderDetails.cash_quantity != "" else "0",
                                           price=orderDetails.price,
                                           type=order_type_order_details,
                                           side=order_side_order_details
@@ -163,7 +163,8 @@ def create_order(orderDetails: OrderDetails, request: Request):
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     try:
-        response_orders_service: order_pb2.OrderDetails = orders_service_order_stub.CreateOrder(orderRequest)
+
+        response_orders_service: order_pb2.OrderDetails = orders_service_order_stub.CreateOrder(response)
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
@@ -305,12 +306,17 @@ def get_order(order_id, request: Request):
     }
 }, description='Deletes an order of specified currency')
 def delete_order(order_id, request: Request):
-    get_order(order_id, request=request)
+    order_details = get_order(order_id, request=request)
+    if order_details['status'] != "ORDER_STATUS_PENDING":
+        logger.error("Order status not PENDING - somebody tried to delete it")
+        raise HTTPException(status_code=400, detail="operation_failed")
 
     delete_order_message = order_pb2.OrderID(id=order_id)
 
     try:
         response: order_pb2.OrderDetails = order_stub.DeleteOrder(delete_order_message)
+        orders_service_order_stub.DeleteOrder(response)
+
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
