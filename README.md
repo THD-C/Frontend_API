@@ -31,3 +31,5 @@ Jeśli compose ma usunąć dane zawarte w bazach danych:
 
 W przypadku zachowywania danych pomijamy flagę -v.
 
+## Dokumentacja API
+[Dokumentacja](https://github.com/THD-C/Frontend_API/blob/main/THD(C)%20API.pdf)
