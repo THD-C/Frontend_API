@@ -170,9 +170,9 @@ def create_order(orderDetails: OrderDetails, request: Request):
         raise HTTPException(status_code=500, detail="internal_server_error")
 
 
-    if response.id != "":
+    if response_orders_service.id != "":
         logger.info(f"Order with id: {response.id} placed successfully")
-        return MessageToDict(response, preserving_proto_field_name=True)
+        return MessageToDict(response_orders_service, preserving_proto_field_name=True)
     logger.warning("Placing order failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
