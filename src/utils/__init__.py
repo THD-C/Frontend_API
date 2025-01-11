@@ -11,5 +11,9 @@ try:
 
     PRICE_MANAGER_PORT = getenv("PRICE_MANAGER_PORT", default="50053")
     PRICE_MANAGER = getenv("PRICE_MANAGER", default="127.0.0.1")
+
+    ORDERS_SERVICE_PORT = getenv("ORDERS_SERVICE_PORT", default="50054")
+    ORDERS_SERVICE = getenv("ORDERS_SERVICE", default="127.0.0.1")
+
 except Exception as e:
     logger.error(f"Error occured when loading environment variables: {e}")
