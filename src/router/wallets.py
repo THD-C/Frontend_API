@@ -115,17 +115,17 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
-
-
     if response.id != "":
+        try:
+            orders_service_wallet_stub.CreateWallet(response)
+        except RpcError as e:
+            logger.error("gRPC error details:", e)
+            raise HTTPException(status_code=500, detail="internal_server_error")
+
         logger.info("Creating wallet successfully performed")
         return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
 
-    try:
-        orders_service_wallet_stub.CreateWallet(response)
-    except RpcError as e:
-        logger.error("gRPC error details:", e)
-        raise HTTPException(status_code=500, detail="internal_server_error")
+
 
     logger.warning("Wallet creation failed")
     raise HTTPException(status_code=400, detail="operation_failed")
@@ -191,6 +191,7 @@ def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
 
     try:
         response: wallet_pb2.Wallet = wallet_stub.UpdateWallet(data_for_update)
+        orders_service_wallet_stub.UpdateWallet(response)
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
