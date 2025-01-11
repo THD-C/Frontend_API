@@ -170,10 +170,10 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     }
 }, description="Update of wallet. Fields id and value are obligatory.")
 def update_wallet(update_wallet_data: WalletUpdateData, request: Request):
-    get_wallet_by_id(update_wallet_data.id, request)
-    wallet_value = float(update_wallet_data.value)
+    current_wallet_value = get_wallet_by_id(update_wallet_data.id, request)
+    wallet_value = float(current_wallet_value["value"])
 
-    if wallet_value < 0:
+    if float(update_wallet_data.value) < 0:
         raise HTTPException(400, detail="negative_value")
 
     update_wallet_data.value = str(float(wallet_value) + float(update_wallet_data.value))
