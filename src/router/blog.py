@@ -220,13 +220,10 @@ def update_blog(request: Request,
         }
     }
 }, description='Lists all blogs matching to applied filters')
-def get_blog(request: Request,
-             title: str | None = Query("", description="Blog title to filter by", ),
-             language: str | None = Query("", description="Blog language to filter by"),
-             path: str | None = Query("", description="Blog path to filter by")):
-    auth_header = request.headers.get("Authorization")
-    jwt_payload = verify_user(auth_header)
-
+def get_blog(
+        title: str | None = Query("", description="Blog title to filter by", ),
+        language: str | None = Query("", description="Blog language to filter by"),
+        path: str | None = Query("", description="Blog path to filter by")):
     blog_filter_message: blog_pb2.FilterBlogMessage = blog_pb2.FilterBlogMessage(title=title,
                                                                                  language=language,
                                                                                  path=path)
