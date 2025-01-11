@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
 
-from src.connections import order_stub
+from src.connections import order_stub, orders_service_order_stub
 from order import order_pb2, order_type_pb2, order_status_pb2, order_side_pb2
 from src.router.wallets import create_wallet, WalletCreationData
 from src.utils.auth import verify_user
@@ -161,6 +161,13 @@ def create_order(orderDetails: OrderDetails, request: Request):
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
+
+    try:
+        response_orders_service: order_pb2.OrderDetails = orders_service_order_stub.CreateOrder(orderRequest)
+    except RpcError as e:
+        logger.error("gRPC error details:", e)
+        raise HTTPException(status_code=500, detail="internal_server_error")
+
 
     if response.id != "":
         logger.info(f"Order with id: {response.id} placed successfully")

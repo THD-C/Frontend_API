@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Query
 from grpc import RpcError
 from pydantic import BaseModel
 
-from src.connections import wallet_stub
+from src.connections import wallet_stub, orders_service_wallet_stub
 from src.router.currency import get_currency_type
 from user import user_type_pb2
 from wallet import wallet_pb2
@@ -110,14 +110,23 @@ def create_wallet(wallet_data: WalletCreationData, request: Request):
     wallet_message = wallet_pb2.Wallet(**wallet_data.model_dump(), user_id=jwt_payload.get("id"), is_crypto=is_crypto)
 
     try:
-        response = wallet_stub.CreateWallet(wallet_message)
+        response:wallet_pb2.Wallet = wallet_stub.CreateWallet(wallet_message)
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
 
+
+
     if response.id != "":
         logger.info("Creating wallet successfully performed")
         return MessageToDict(response, preserving_proto_field_name=True, always_print_fields_with_no_presence=True)
+
+    try:
+        orders_service_wallet_stub.CreateWallet(response)
+    except RpcError as e:
+        logger.error("gRPC error details:", e)
+        raise HTTPException(status_code=500, detail="internal_server_error")
+
     logger.warning("Wallet creation failed")
     raise HTTPException(status_code=400, detail="operation_failed")
 
