@@ -90,17 +90,20 @@ def login(credentials: Credentials):
         raise HTTPException(status_code=500, detail="internal_server_error")
 
     if response.success:
-        jwt_data = {"id": response.id,
-                    "email": response.email,
-                    "login": response.username,
-                    "user_type": response.user_type
-                    }
+        jwt_data = {
+          "id": response.id,
+          "email": response.email,
+          "login": response.username,
+          "user_type": response.user_type
+        }
         jwt_token = create_jwt_token(jwt_data)
 
-        endpoint_response = {"accessToken": jwt_token,
-                             "authScheme": 'Bearer',
-                             "email": response.email,
-                             "username": response.username}
+        endpoint_response = {
+          "accessToken": jwt_token,
+          "authScheme": 'Bearer',
+          "email": response.email,
+          "username": response.username
+        }
         logger.info(f"User with username: {response.username} logged in")
         return endpoint_response
     logger.warning("User not logged in - invalid credentials")
@@ -213,6 +216,7 @@ def auth_google(token: TokenRequest):
             if e.status_code == 400:
                 login_data = Credentials(login=email, password=hashed_password)
                 login_response = login(login_data)
+                login_response["oauthLogin"] = True
                 logger.info("User logged in using google")
                 return login_response
             else:
