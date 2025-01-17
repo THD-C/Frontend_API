@@ -1,4 +1,4 @@
 #!/bin/bash
 docker compose down
-docker compose build
-docker compose up -d
+docker compose build --no-cache
+docker compose --profile Telemetry up -d

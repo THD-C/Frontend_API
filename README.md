@@ -8,7 +8,7 @@ Jest to wymagane, aby wszystkie zmienne, które nie mogą być publiczne został
 Zmienne środowiskowe dotyczące konfiguracji połączeń z innymi kontenerami znajdują się w pliku compose.yaml w sekcji 'Environments'
 
 ### Uruchomienie compose: 
-W celu umożliwienia współpracy z bazami danych, warstwą prezentacji oraz usługą zajmującą się kontrolą cen aktywów, należy uruchomić następujące polecenia:
+W celu umożliwienia współpracy z bazami danych, warstwą prezentacji,usługą zajmującą się kontrolą cen aktywów oraz serwisem odpowiedzialnym za realizację zamówień, należy uruchomić następujące polecenia:
 
 #### Budowanie compose
 
@@ -19,7 +19,7 @@ W celu umożliwienia współpracy z bazami danych, warstwą prezentacji oraz us�
 #### Uruchomienie compose
 
 ```commandline
-    docker compose up -d
+    docker compose --profile Telemetry up -d
 ```
 
 #### Zatrzymanie compose
@@ -30,6 +30,11 @@ Jeśli compose ma usunąć dane zawarte w bazach danych:
 ```
 
 W przypadku zachowywania danych pomijamy flagę -v.
+
+W celu szybkiego przebudowania i uruchomienia kontenera można użyć pliku:
+```
+    ./rebuild.sh
+```
 
 ## Dokumentacja API
 [Dokumentacja](https://github.com/THD-C/Frontend_API/blob/main/THD(C)%20API.pdf)
