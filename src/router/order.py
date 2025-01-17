@@ -147,8 +147,12 @@ def create_order(orderDetails: OrderDetails, request: Request):
 
     orderRequest = order_pb2.OrderDetails(user_id=jwt_payload.get("id"),
                                           status=order_status_pb2.ORDER_STATUS_PENDING,
-                                          fiat_wallet_id=orderDetails.currency_used_wallet_id,
-                                          crypto_wallet_id=wallet_creation_response.get("id"),
+                                          fiat_wallet_id=orderDetails.currency_used_wallet_id if
+                                          order_side_order_details == order_side_pb2.ORDER_SIDE_BUY else
+                                          wallet_creation_response.get("id"),
+                                          crypto_wallet_id=wallet_creation_response.get("id") if
+                                          order_side_order_details == order_side_pb2.ORDER_SIDE_BUY else
+                                          orderDetails.currency_used_wallet_id,
                                           nominal=orderDetails.nominal,
                                           cash_quantity=orderDetails.cash_quantity if orderDetails.cash_quantity != "" else "0",
                                           price=orderDetails.price,
@@ -168,7 +172,6 @@ def create_order(orderDetails: OrderDetails, request: Request):
     except RpcError as e:
         logger.error("gRPC error details:", e)
         raise HTTPException(status_code=500, detail="internal_server_error")
-
 
     if response_orders_service.id != "":
         logger.info(f"Order with id: {response.id} placed successfully")
