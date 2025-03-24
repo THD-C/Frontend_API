@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request, Query
 from grpc import RpcError
 from pydantic import BaseModel
 import stripe
+import json
 
 from secret import secret_pb2
 from src.connections import secret_stub, payment_stub
@@ -101,6 +102,7 @@ def payment(payment_details: MakePayment, request: Request):
     origin = request.headers.get('Origin') or request.headers.get('Referer') or 'http://localhost'
     logger.info(f'The client ({origin}) with origin: {request.headers.get('Origin')} & referer: {request.headers.get('Referer')} requested payment')
     parsed_url = urlparse(origin)
+    logger.info(f'Parsed URL: {json.dump(parsed_url.dict())}')
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     success_url = f"{base_url}/payment/success"
