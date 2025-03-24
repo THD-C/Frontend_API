@@ -98,7 +98,7 @@ def payment(payment_details: MakePayment, request: Request):
     operation_nominal = float(payment_details.nominal) * 100
     user_id = jwt_payload['id']
 
-    origin = request.headers.get('Origin') or request.headers.get('Referer')
+    origin = request.headers.get('Origin') or request.headers.get('Referer') or 'http://localhost'
     parsed_url = urlparse(origin)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
