@@ -102,7 +102,7 @@ def payment(payment_details: MakePayment, request: Request):
     origin = request.headers.get('Origin') or request.headers.get('Referer') or 'http://localhost'
     logger.info(f'The client ({origin}) with origin: {request.headers.get('Origin')} & referer: {request.headers.get('Referer')} requested payment')
     parsed_url = urlparse(origin)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}/{parsed_url.path}"
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 
     success_url = f"{base_url}/payment/success"
     cancel_url = f"{base_url}/payment/fail"
