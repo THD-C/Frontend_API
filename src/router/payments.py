@@ -101,10 +101,13 @@ def payment(payment_details: MakePayment, request: Request):
     origin = request.headers.get('Origin') or request.headers.get('Referer') or 'http://localhost'
     logger.info(f'The client ({origin}) with origin: {request.headers.get('Origin')} & referer: {request.headers.get('Referer')} requested payment')
     parsed_url = urlparse(origin)
+    logger.info(f'Parsed URL: {parsed_url}')
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     success_url = f"{base_url}/payment/success"
     cancel_url = f"{base_url}/payment/fail"
+    
+    logger.info(f'Parsed payment success: {success_url} & cancel: {cancel_url} URLs')
 
     try:
         session = stripe.checkout.Session.create(
