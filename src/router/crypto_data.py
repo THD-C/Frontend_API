@@ -372,6 +372,7 @@ def get_list_of_coins(request: Request,
     try:
         coins_list_message: coins_pb2.ListDataForAllCoinsRequest = coins_pb2.ListDataForAllCoinsRequest(
             fiat_currency=currency)
+        print(coins_list_message)
 
         response: coins_pb2.ListDataForAllCoinsResponse = prices_stub.GetListDataForAllCoins(coins_list_message)
     except RpcError as e:

@@ -14,5 +14,6 @@ RUN curl -s -L -o thdcgrpc.tar.gz https://github.com/THD-C/Protocol/releases/lat
     && cp -r thdcgrpc/* . \
     && rm -r thdcgrpc
 
+ENV TZ='Europe/Warsaw'
 
 CMD ["python", "main.py"]
