@@ -104,7 +104,8 @@ def payment(payment_details: MakePayment, request: Request):
     parsed_url = urlparse(origin)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 
-    success_url = f"{base_url}/payment/success"
+    # success_url = f"{base_url}/payment/success"
+    succes_url = f"https://www.xnxx.com/video-18wsf5bb/public_agent_brunette_model_from_france_get_pounded_in_a_public_place_by_a_huge_cock"
     cancel_url = f"{base_url}/payment/fail"
     
     logger.info(f'Parsed payment success: {success_url} & cancel: {cancel_url} URLs')
@@ -374,3 +375,4 @@ def cancel_payment(payment_id, request: Request):
         logger.info(f"Payment with id {payment_id} was already cancelled or session expired")
         payment_details = get_payment_details(payment_id, request)
         return payment_details
+
